@@ -4,12 +4,12 @@
 .hero-slider-section {
   position: relative;
   width: 100%;
-  min-height: 60vh;
+  height: 60vh;
 }
 
 @media (min-width: 768px) {
   .hero-slider-section {
-    min-height: 80vh;
+    height: 80vh;
   }
 }
 

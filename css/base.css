@@ -8,14 +8,10 @@
   padding: 0;
 }
 
-/* Prevent text size adjustment on orientation change */
+/* Base HTML elements */
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-}
-
-/* Base HTML elements */
-html {
   font-size: 16px;
   scroll-behavior: smooth;
 }
@@ -188,16 +184,13 @@ a:hover {
 /* Mobile first approach */
 @media (min-width: 768px) {
   .container { padding: 0 var(--space-8); }
-  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .grid-cols-5 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1280px) {
   .container { padding: 0 var(--space-16); }
-  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
@@ -275,30 +268,20 @@ a:hover {
 /* === ASPECT RATIO UTILS === */
 /* 2:3 ratio untuk poster card */
 .aspect-ratio-2-3 {
-  position: relative;
+  aspect-ratio: 2 / 3;
   width: 100%;
-  padding-top: 150%; /* 3/2 = 1.5 = 150% */
-}
-
-.aspect-ratio-2-3 > * {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  overflow: hidden;
 }
 
 /* 16:9 ratio untuk video */
 .aspect-ratio-16-9 {
-  position: relative;
+  aspect-ratio: 16 / 9;
   width: 100%;
-  padding-top: 56.25%; /* 9/16 = 0.5625 = 56.25% */
+  overflow: hidden;
 }
 
-.aspect-ratio-16-9 > * {
-  position: absolute;
-  top: 0;
-  left: 0;
+.aspect-ratio-2-3 > *, .aspect-ratio-16-9 > * {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
