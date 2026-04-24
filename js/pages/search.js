@@ -4,7 +4,7 @@
  */
 
 import { DrachinAPI } from '../api.js';
-import { renderDramaCard, renderSkeletonCard, Toast, initNavbar } from '../components.js';
+import { renderDramaCard, renderSkeletonCard, Toast, initNavbar, initFooter } from '../components.js';
 import { getQueryParam, debounce } from '../utils.js';
 import { CSS_CLASSES, ERROR_MESSAGES, CARDS_PER_PAGE } from '../config.js';
 
@@ -146,8 +146,9 @@ async function init() {
   // Set query in input
   searchInput.value = query;
 
-  // Initialize navbar
+  // Initialize navbar & footer
   initNavbar();
+  initFooter();
 
   // If query exists, load results
   if (query) {

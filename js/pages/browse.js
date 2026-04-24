@@ -4,7 +4,7 @@
  */
 
 import { DrachinAPI } from '../api.js';
-import { renderDramaCard, renderSkeletonCard, Toast, initNavbar } from '../components.js';
+import { renderDramaCard, renderSkeletonCard, Toast, initNavbar, initFooter } from '../components.js';
 import { CSS_CLASSES, ERROR_MESSAGES, CARDS_PER_PAGE } from '../config.js';
 
 // State object
@@ -140,8 +140,9 @@ async function init() {
   // Show skeleton
   showSkeleton();
 
-  // Initialize navbar
+  // Initialize navbar & footer
   initNavbar();
+  initFooter();
 
   // Load initial data
   await loadDramas(1, 'latest');

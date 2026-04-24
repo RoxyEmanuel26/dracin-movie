@@ -3,8 +3,19 @@
  * Semua fungsi fetch API dengan cache, error handling, dan rate limiting
  */
 
-import { CONFIG } from './config.js';
-import { globalRateLimiter } from './security.js';
+import {
+  API_BASE_URL,
+  API_TIMEOUT_MS,
+  CACHE_TTL_DEFAULT,
+  CACHE_TTL_HOME,
+  CACHE_TTL_LATEST,
+  CACHE_TTL_POPULAR,
+  CACHE_TTL_DETAIL,
+  CACHE_TTL_EPISODE,
+  CACHE_TTL_SEARCH,
+  ERROR_MESSAGES
+} from './config.js';
+import { globalRateLimiter, sanitizeQuery, sanitizeSlug } from './security.js';
 
 /**
  * CacheManager - Manajemen cache dengan TTL berbeda per endpoint
@@ -38,20 +49,20 @@ const CacheManager = {
    * @param {string} endpoint - Endpoint API untuk menentukan TTL
    */
   set(key, data, endpoint) {
-    let ttl = CONFIG.CACHE_TTL_DEFAULT;
+    let ttl = CACHE_TTL_DEFAULT;
 
     if (endpoint.includes('home')) {
-      ttl = CONFIG.CACHE_TTL_HOME;
+      ttl = CACHE_TTL_HOME;
     } else if (endpoint.includes('latest')) {
-      ttl = CONFIG.CACHE_TTL_LATEST;
+      ttl = CACHE_TTL_LATEST;
     } else if (endpoint.includes('popular')) {
-      ttl = CONFIG.CACHE_TTL_POPULAR;
+      ttl = CACHE_TTL_POPULAR;
     } else if (endpoint.includes('detail')) {
-      ttl = CONFIG.CACHE_TTL_DETAIL;
+      ttl = CACHE_TTL_DETAIL;
     } else if (endpoint.includes('episode')) {
-      ttl = CONFIG.CACHE_TTL_EPISODE;
+      ttl = CACHE_TTL_EPISODE;
     } else if (endpoint.includes('search')) {
-      ttl = CONFIG.CACHE_TTL_SEARCH;
+      ttl = CACHE_TTL_SEARCH;
     }
 
     if (ttl === 0) return;
@@ -100,7 +111,7 @@ function validateEndpoint(endpoint) {
 async function fetchAPI(endpoint) {
   // Cek rate limit dulu
   if (!globalRateLimiter.canMakeRequest()) {
-    throw new Error(CONFIG.ERROR_MESSAGES.RATE_LIMIT);
+    throw new Error(ERROR_MESSAGES.RATE_LIMIT);
   }
 
   // Validasi format endpoint
@@ -108,7 +119,7 @@ async function fetchAPI(endpoint) {
     throw new Error('Invalid endpoint format');
   }
 
-  const url = CONFIG.API_BASE_URL + endpoint;
+  const url = API_BASE_URL + endpoint;
 
   // Cek cache terlebih dahulu
   const cachedData = CacheManager.get(url);
@@ -118,7 +129,7 @@ async function fetchAPI(endpoint) {
 
   // Fetch dengan AbortController untuk timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
     const response = await fetch(url, {
@@ -133,15 +144,15 @@ async function fetchAPI(endpoint) {
     // Check response status
     if (!response.ok) {
       if (response.status === 404) {
-        throw new Error(CONFIG.ERROR_MESSAGES.NOT_FOUND);
+        throw new Error(ERROR_MESSAGES.NOT_FOUND);
       }
       if (response.status === 500) {
-        throw new Error(CONFIG.ERROR_MESSAGES.SERVER_ERROR);
+        throw new Error(ERROR_MESSAGES.SERVER_ERROR);
       }
       if (response.status === 429) {
-        throw new Error(CONFIG.ERROR_MESSAGES.RATE_LIMIT);
+        throw new Error(ERROR_MESSAGES.RATE_LIMIT);
       }
-      throw new Error(`${CONFIG.ERROR_MESSAGES.INVALID_RESPONSE} (Status: ${response.status})`);
+      throw new Error(`${ERROR_MESSAGES.INVALID_RESPONSE} (Status: ${response.status})`);
     }
 
     // Parse JSON response
@@ -149,7 +160,7 @@ async function fetchAPI(endpoint) {
 
     // Validate response structure
     if (data === null || typeof data !== 'object') {
-      throw new Error(CONFIG.ERROR_MESSAGES.INVALID_RESPONSE);
+      throw new Error(ERROR_MESSAGES.INVALID_RESPONSE);
     }
 
     // Simpan hasil ke cache
@@ -164,7 +175,7 @@ async function fetchAPI(endpoint) {
     }
 
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error(CONFIG.ERROR_MESSAGES.NETWORK);
+      throw new Error(ERROR_MESSAGES.NETWORK);
     }
 
     throw error;

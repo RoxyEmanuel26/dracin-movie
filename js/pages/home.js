@@ -4,9 +4,10 @@
  */
 
 import { DrachinAPI } from '../api.js';
-import { renderDramaCard, renderSkeletonCard, Toast, initNavbar } from '../components.js';
+import { renderDramaCard, renderSkeletonCard, Toast, initNavbar, initFooter } from '../components.js';
 import { debounce, handleImageError } from '../utils.js';
 import { CSS_CLASSES, ERROR_MESSAGES, SELECTORS, CARDS_PER_PAGE, BACK_TO_TOP_THRESHOLD_PX } from '../config.js';
+import { sanitize, validateUrl } from '../security.js';
 
 // State object
 const state = {
@@ -28,8 +29,11 @@ const backToTopBtn = document.querySelector('#back-to-top');
  * @param {array} slides - Array of slide data
  */
 export function initHeroSlider(slides) {
+  const container = heroSliderContainer || document.querySelector('#hero-slider');
+  if (!container) return;
+
   if (!slides || slides.length === 0) {
-    heroSliderContainer.innerHTML = '';
+    container.innerHTML = '';
     return;
   }
 
@@ -42,12 +46,12 @@ export function initHeroSlider(slides) {
   let dotsHTML = '';
 
   slides.forEach((slide, index) => {
-    const title = slide.title || slide.judul || 'Judul Tidak Tersedia';
-    const slug = slide.slug || '';
+    const title = sanitize(slide.title || slide.judul || 'Judul Tidak Tersedia');
+    const slug = encodeURIComponent(slide.slug || '');
     const posterRaw = slide.poster || slide.thumbnail || slide.image || '';
-    const poster = posterRaw || '/assets/poster-placeholder.svg';
-    const genre = slide.genre || slide.kategori || '';
-    const synopsis = (slide.synopsis || slide.sinopsis || '').slice(0, 200);
+    const poster = validateUrl(posterRaw) || '/assets/poster-placeholder.svg';
+    const genre = sanitize(slide.genre || slide.kategori || '');
+    const synopsis = sanitize((slide.synopsis || slide.sinopsis || '').slice(0, 200));
 
     slidesHTML += `
       <div class="hero-slide ${index === 0 ? 'is-active' : ''}" data-index="${index}">
@@ -58,8 +62,8 @@ export function initHeroSlider(slides) {
           <p class="hero-slide__synopsis">${synopsis}</p>
           ${genre ? `<span class="hero-slide__badge badge badge--new">${genre}</span>` : ''}
           <div class="hero-slide__actions">
-            <a href="watch.html?slug=${encodeURIComponent(slug)}" class="btn btn--primary">Tonton Sekarang</a>
-            <a href="detail.html?slug=${encodeURIComponent(slug)}" class="btn btn--outline">Detail</a>
+            <a href="watch.html?slug=${slug}" class="btn btn--primary">Tonton Sekarang</a>
+            <a href="detail.html?slug=${slug}" class="btn btn--outline">Detail</a>
           </div>
         </div>
       </div>
@@ -68,7 +72,7 @@ export function initHeroSlider(slides) {
     dotsHTML += `<button class="slider-dot ${index === 0 ? 'is-active' : ''}" data-slide="${index}" aria-label="Slide ${index + 1}"></button>`;
   });
 
-  heroSliderContainer.innerHTML = `
+  container.innerHTML = `
     <div class="hero-slider">
       <div class="hero-slider__slides">
         ${slidesHTML}
@@ -85,8 +89,8 @@ export function initHeroSlider(slides) {
 
   // Update active slide
   function updateSlide(index) {
-    const slides = heroSliderContainer.querySelectorAll('.hero-slide');
-    const dots = heroSliderContainer.querySelectorAll('.slider-dot');
+    const slides = container.querySelectorAll('.hero-slide');
+    const dots = container.querySelectorAll('.slider-dot');
 
     slides.forEach((slide, i) => {
       slide.classList.toggle('is-active', i === index);
@@ -101,14 +105,14 @@ export function initHeroSlider(slides) {
 
   // Next slide
   function nextSlide() {
-    const slides = heroSliderContainer.querySelectorAll('.hero-slide');
+    const slides = container.querySelectorAll('.hero-slide');
     const newIndex = (currentSlide + 1) % slides.length;
     updateSlide(newIndex);
   }
 
   // Previous slide
   function prevSlide() {
-    const slides = heroSliderContainer.querySelectorAll('.hero-slide');
+    const slides = container.querySelectorAll('.hero-slide');
     const newIndex = (currentSlide - 1 + slides.length) % slides.length;
     updateSlide(newIndex);
   }
@@ -128,9 +132,9 @@ export function initHeroSlider(slides) {
   }
 
   // Event listeners
-  const prevBtn = heroSliderContainer.querySelector('.slider-btn-prev');
-  const nextBtn = heroSliderContainer.querySelector('.slider-btn-next');
-  const dots = heroSliderContainer.querySelectorAll('.slider-dot');
+  const prevBtn = container.querySelector('.slider-btn-prev');
+  const nextBtn = container.querySelector('.slider-btn-next');
+  const dots = container.querySelectorAll('.slider-dot');
 
   if (prevBtn) {
     prevBtn.addEventListener('click', prevSlide);
@@ -148,7 +152,7 @@ export function initHeroSlider(slides) {
   });
 
   // Pause on hover
-  const slider = heroSliderContainer.querySelector('.hero-slider');
+  const slider = container.querySelector('.hero-slider');
   if (slider) {
     slider.addEventListener('mouseenter', stopAutoPlay);
     slider.addEventListener('mouseleave', startAutoPlay);
@@ -246,8 +250,9 @@ async function init() {
   // Show skeleton
   showSkeleton();
 
-  // Initialize navbar
+  // Initialize navbar & footer
   initNavbar();
+  initFooter();
 
   // Fetch data in parallel
   try {

@@ -3,9 +3,9 @@
  * Semua fungsi rendering untuk komponen UI
  */
 
-import { sanitize, validateUrl } from './security.js';
-import { truncate } from './utils.js';
-import { SITE_NAME, SITE_TAGLINE, CSS_CLASSES, TOAST_DURATION_MS, ERROR_MESSAGES } from './config.js';
+import { sanitize, validateUrl, sanitizeSlug } from './security.js';
+import { truncate, debounce } from './utils.js';
+import { SITE_NAME, SITE_TAGLINE, CSS_CLASSES, TOAST_DURATION_MS, ERROR_MESSAGES, SEARCH_DEBOUNCE_MS } from './config.js';
 
 /**
  * Render drama card dengan BEM class
@@ -24,7 +24,7 @@ export function renderDramaCard(drama, options = {}) {
 
   // Extract dan sanitize data drama
   const title = sanitize(drama.title || drama.judul || 'Judul Tidak Tersedia');
-  const slug = sanitizeSlug(drama.slug || drama.slug || '');
+  const slug = sanitizeSlug(drama.slug || '');
   const posterRaw = drama.poster || drama.thumbnail || drama.image || '';
   const poster = validateUrl(posterRaw) || '/assets/poster-placeholder.svg';
   const totalEpisodes = drama.total_episode || drama.episodes || 0;
@@ -43,25 +43,30 @@ export function renderDramaCard(drama, options = {}) {
   // Badge HTML
   const badgeHTML = badge ? `<span class="badge badge--${badgeType}">${badge}</span>` : '';
 
+  // Build link URL
+  const detailUrl = slug ? `detail.html?slug=${encodeURIComponent(slug)}` : '#';
+
   return `
-    <article class="drama-card">
-      ${rankDisplay}
-      <div class="drama-card__poster-wrap">
-        <img 
-          class="drama-card__poster" 
-          src="${poster}" 
-          alt="${title}"
-          loading="lazy"
-          onerror="this.src='/assets/poster-placeholder.svg'"
-        />
-        ${badgeHTML}
-      </div>
-      <div class="drama-card__info">
-        <h3 class="drama-card__title">${title}</h3>
-        ${genreLabel}
-        ${episodeLabel}
-      </div>
-    </article>
+    <a href="${detailUrl}" class="drama-card-link" aria-label="${title}">
+      <article class="drama-card">
+        ${rankDisplay}
+        <div class="drama-card__poster-wrap">
+          <img 
+            class="drama-card__poster" 
+            src="${poster}" 
+            alt="${title}"
+            loading="lazy"
+            onerror="this.src='/assets/poster-placeholder.svg'"
+          />
+          ${badgeHTML}
+        </div>
+        <div class="drama-card__info">
+          <h3 class="drama-card__title">${title}</h3>
+          ${genreLabel}
+          ${episodeLabel}
+        </div>
+      </article>
+    </a>
   `;
 }
 
@@ -113,13 +118,14 @@ export function renderErrorState(message, containerId, retryFn) {
       <div class="error-state__icon">✕</div>
       <h3 class="error-state__title">Terjadi kesalahan</h3>
       <p class="error-state__message">${sanitize(message)}</p>
-      <button class="btn btn--primary" onclick="${retryFn.name || 'retry'}()">Coba Lagi</button>
+      <button class="btn btn--primary" id="error-retry-btn">Coba Lagi</button>
     </div>
   `;
 
-  // Attach retry function if it's a named function
-  if (typeof retryFn === 'function') {
-    window[retryFn.name || 'retry'] = retryFn;
+  // Attach retry function via event listener (safer than inline onclick)
+  const retryBtn = document.getElementById('error-retry-btn');
+  if (retryBtn && typeof retryFn === 'function') {
+    retryBtn.addEventListener('click', retryFn);
   }
 }
 
@@ -140,7 +146,7 @@ export function renderEmptyState(container, title, subtitle, actionHTML) {
       </svg>
       <h3 class="empty-state__title">${sanitize(title)}</h3>
       <p class="empty-state__subtitle">${sanitize(subtitle)}</p>
-      ${actionHTML}
+      ${actionHTML || ''}
     </div>
   `;
 }
@@ -303,7 +309,7 @@ export function initNavbar() {
         </form>
 
         <ul class="navbar__links">
-          <li><a href="index.html" class="navbar__link navbar__link--active">Home</a></li>
+          <li><a href="index.html" class="navbar__link">Home</a></li>
           <li><a href="browse.html" class="navbar__link">Browse</a></li>
           <li><a href="popular.html" class="navbar__link">Popular</a></li>
           <li><a href="search.html" class="navbar__link">Search</a></li>
@@ -312,9 +318,16 @@ export function initNavbar() {
     </nav>
   `;
 
-  // Setup search debounce
+  // Debounced search function for navbar input
+  const debouncedSearch = debounce((query) => {
+    if (query && query.trim().length >= 2) {
+      window.location.href = `search.html?q=${encodeURIComponent(query.trim())}`;
+    }
+  }, SEARCH_DEBOUNCE_MS);
+
+  // Setup search
   const searchForm = document.getElementById('navbar-search-form');
-  const searchInput = document.getElementById('navbar-search-form')?.querySelector('.search-input');
+  const searchInput = searchForm ? searchForm.querySelector('.search-input') : null;
 
   if (searchForm && searchInput) {
     searchForm.addEventListener('submit', (e) => {
@@ -356,4 +369,36 @@ export function initNavbar() {
       link.classList.remove('navbar__link--active');
     }
   });
+}
+
+/**
+ * Initialize footer
+ * Renders a consistent footer across all pages
+ */
+export function initFooter() {
+  const footerPlaceholder = document.getElementById('footer-placeholder');
+  if (!footerPlaceholder) return;
+
+  footerPlaceholder.innerHTML = `
+    <div class="footer">
+      <div class="footer__container">
+        <div class="footer__brand">
+          <div class="footer__brand-name">roxy<span style="color: var(--color-accent-primary)">-drachin</span></div>
+          <p class="footer__brand-tagline">Platform streaming drama China terlengkap dan terpercaya.</p>
+        </div>
+        <div>
+          <h4 class="footer__title">Menu</h4>
+          <ul class="footer__links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="browse.html">Browse</a></li>
+            <li><a href="popular.html">Populer</a></li>
+            <li><a href="search.html">Cari</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__copyright">
+        <p>© ${new Date().getFullYear()} roxy-drachin. All rights reserved.</p>
+      </div>
+    </div>
+  `;
 }

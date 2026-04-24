@@ -4,7 +4,7 @@
  */
 
 import { DrachinAPI } from '../api.js';
-import { renderDramaCard, Toast, initNavbar } from '../components.js';
+import { renderDramaCard, Toast, initNavbar, initFooter } from '../components.js';
 import { getQueryParam, setPageTitle, handleImageError } from '../utils.js';
 import { CSS_CLASSES, ERROR_MESSAGES } from '../config.js';
 
@@ -240,8 +240,9 @@ async function init() {
     return;
   }
 
-  // Initialize navbar
+  // Initialize navbar & footer
   initNavbar();
+  initFooter();
 
   // Fetch drama detail to get total episodes and title
   try {
@@ -260,6 +261,10 @@ async function init() {
     window.location.href = 'index.html';
   }
 }
+
+// Expose functions to global scope for HTML onclick attributes
+window.changeEpisode = changeEpisode;
+window.retryVideo = retryVideo;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', init);

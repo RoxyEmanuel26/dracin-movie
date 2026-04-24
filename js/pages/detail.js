@@ -4,8 +4,9 @@
  */
 
 import { DrachinAPI } from '../api.js';
-import { renderDramaCard, renderSkeletonCard, Toast, initNavbar } from '../components.js';
-import { getQueryParam, setPageTitle, handleImageError } from '../utils.js';
+import { renderDramaCard, renderSkeletonCard, Toast, initNavbar, initFooter } from '../components.js';
+import { getQueryParam, setPageTitle, handleImageError, truncate } from '../utils.js';
+import { sanitize, validateUrl } from '../security.js';
 import { CSS_CLASSES, ERROR_MESSAGES, TITLE_MAX_LENGTH, SYNOPSIS_PREVIEW_LENGTH, SLUG_MAX_LENGTH } from '../config.js';
 
 // State object
@@ -59,7 +60,7 @@ function renderHeroDetailSection(drama) {
   } = drama;
 
   // Set poster
-  heroDetailPoster.src = poster || '';
+  heroDetailPoster.src = validateUrl(poster) || '';
   heroDetailPoster.alt = title;
   heroDetailPoster.onerror = () => handleImageError(heroDetailPoster);
 
@@ -68,10 +69,15 @@ function renderHeroDetailSection(drama) {
 
   // Set meta
   const totalEpisodes = episodes.length;
+  const safeYear = sanitize(String(year || ''));
+  const safeStatus = sanitize(status || '');
+  const safeRating = sanitize(String(rating || ''));
+  const safeGenres = genres.map(g => sanitize(g));
+  
   heroDetailMeta.innerHTML = `
     <div class="hero-detail__meta-item">
       <span class="meta-label">Tahun:</span>
-      <span class="meta-value">${year || '-'}</span>
+      <span class="meta-value">${safeYear || '-'}</span>
     </div>
     <div class="hero-detail__meta-item">
       <span class="meta-label">Episode:</span>
@@ -79,23 +85,24 @@ function renderHeroDetailSection(drama) {
     </div>
     <div class="hero-detail__meta-item">
       <span class="meta-label">Status:</span>
-      <span class="meta-value">${status || '-'}</span>
+      <span class="meta-value">${safeStatus || '-'}</span>
     </div>
     <div class="hero-detail__meta-item">
       <span class="meta-label">Rating:</span>
-      <span class="meta-value">${rating ? `★ ${rating}` : '-'}</span>
+      <span class="meta-value">${safeRating ? `★ ${safeRating}` : '-'}</span>
     </div>
     <div class="hero-detail__meta-item">
       <span class="meta-label">Genre:</span>
-      <span class="meta-value">${genres.slice(0, 3).join(', ') || '-'}</span>
+      <span class="meta-value">${safeGenres.slice(0, 3).join(', ') || '-'}</span>
     </div>
   `;
 
   // Set synopsis dengan collapsible
-  const truncatedSynopsis = synopsis ? truncate(synopsis, SYNOPSIS_PREVIEW_LENGTH) : 'Sinopsis tidak tersedia.';
+  const safeSynopsis = sanitize(synopsis || '');
+  const truncatedSynopsis = safeSynopsis ? truncate(safeSynopsis, SYNOPSIS_PREVIEW_LENGTH) : 'Sinopsis tidak tersedia.';
   heroDetailSynopsis.innerHTML = `
     <p class="hero-detail__synopsis-text">${truncatedSynopsis}</p>
-    ${synopsis && synopsis.length > SYNOPSIS_PREVIEW_LENGTH ? `
+    ${safeSynopsis && safeSynopsis.length > SYNOPSIS_PREVIEW_LENGTH ? `
       <button class="btn btn--ghost hero-detail__synopsis-toggle" aria-expanded="false">
         Baca Lebih
       </button>
@@ -256,8 +263,9 @@ async function init() {
   // Show skeleton
   showSkeleton();
 
-  // Initialize navbar
+  // Initialize navbar & footer
   initNavbar();
+  initFooter();
 
   // Fetch data
   try {

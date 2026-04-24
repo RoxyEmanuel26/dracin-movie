@@ -23,7 +23,54 @@ vi.mock('../js/config.js', () => ({
     SCROLLED: 'is-scrolled',
     EXPANDED: 'is-expanded',
     HIGHLIGHTED: 'is-highlighted',
-  }
+  },
+  ERROR_MESSAGES: { SERVER_ERROR: 'Server error' },
+  SELECTORS: {},
+  CARDS_PER_PAGE: 10,
+  BACK_TO_TOP_THRESHOLD_PX: 300,
+  SITE_NAME: 'roxy-drachin',
+  SITE_TAGLINE: 'Drama China',
+  TOAST_DURATION_MS: 3000,
+  SEARCH_DEBOUNCE_MS: 500,
+}));
+
+// Mock the security module
+vi.mock('../js/security.js', () => ({
+  sanitize: (str) => str,
+  validateUrl: (url) => url || '',
+  globalRateLimiter: {
+    canMakeRequest: () => true,
+    getRemainingRequests: () => 100,
+    maxRequests: 45,
+    windowMs: 60000,
+  },
+  sanitizeQuery: (q) => q,
+  sanitizeSlug: (s) => s,
+}));
+
+// Mock the utils module
+vi.mock('../js/utils.js', () => ({
+  debounce: (fn) => fn,
+  handleImageError: () => {},
+  truncate: (s) => s,
+}));
+
+// Mock the api module
+vi.mock('../js/api.js', () => ({
+  DrachinAPI: {
+    getHome: vi.fn(),
+    getLatest: vi.fn(),
+    getPopular: vi.fn(),
+  },
+}));
+
+// Mock the components module
+vi.mock('../js/components.js', () => ({
+  renderDramaCard: () => '',
+  renderSkeletonCard: () => '',
+  Toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn() },
+  initNavbar: vi.fn(),
+  initFooter: vi.fn(),
 }));
 
 // Create a mock container that will be used by initHeroSlider
