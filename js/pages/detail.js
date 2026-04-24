@@ -269,7 +269,8 @@ async function init() {
 
   // Fetch data
   try {
-    const data = await DrachinAPI.getDetail(state.slug);
+    const response = await DrachinAPI.getDetail(state.slug);
+    const data = response.data || response;
 
     // Store data
     state.data = data;

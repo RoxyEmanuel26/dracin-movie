@@ -26,11 +26,11 @@ describe('Property 1: Cache Consistency', () => {
 
   it('should validate cache key structure', () => {
     // Test that cache keys are properly constructed
-    const baseUrl = 'https://api.sankavollerei.com';
+    const baseUrl = 'https://www.sankavollerei.com';
     const endpoint = '/anime/drachin/home';
     const cacheKey = baseUrl + endpoint;
     
-    expect(cacheKey).toBe('https://api.sankavollerei.com/anime/drachin/home');
+    expect(cacheKey).toBe('https://www.sankavollerei.com/anime/drachin/home');
     expect(cacheKey).toContain(baseUrl);
   });
 

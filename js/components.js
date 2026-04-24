@@ -3,7 +3,7 @@
  * Semua fungsi rendering untuk komponen UI
  */
 
-import { sanitize, validateUrl, sanitizeSlug } from './security.js';
+import { sanitize, validateUrl } from './security.js';
 import { truncate, debounce } from './utils.js';
 import { SITE_NAME, SITE_TAGLINE, CSS_CLASSES, TOAST_DURATION_MS, ERROR_MESSAGES, SEARCH_DEBOUNCE_MS } from './config.js';
 

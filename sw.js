@@ -4,7 +4,7 @@
  */
 
 // Konstanta
-const CACHE_NAME = 'roxy-drachin-v1';
+const CACHE_NAME = 'roxy-drachin-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -62,10 +62,18 @@ self.addEventListener('activate', (event) => {
 
 // Event fetch - network first for API, cache first for static assets
 self.addEventListener('fetch', (event) => {
+  // Hanya proses request HTTP/HTTPS (abaikan chrome-extension:// dll)
+  if (!event.request.url.startsWith('http')) return;
+
   const url = new URL(event.request.url);
 
+  // Bypass Service Worker di localhost agar tidak bentrok dengan Vite HMR (CSS JS module)
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    return;
+  }
+
   // Network First untuk API requests
-  if (url.hostname === 'api.sankavollerei.com') {
+  if (url.hostname === 'www.sankavollerei.com') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {

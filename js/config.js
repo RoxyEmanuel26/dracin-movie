@@ -4,7 +4,7 @@
  */
 
 // API Configuration
-export const API_BASE_URL = 'https://api.sankavollerei.com';
+export const API_BASE_URL = 'https://www.sankavollerei.com';
 export const API_TIMEOUT_MS = 10000;
 export const API_RATE_LIMIT = 45;
 export const API_RATE_WINDOW_MS = 60000;

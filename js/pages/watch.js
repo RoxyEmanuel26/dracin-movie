@@ -156,7 +156,8 @@ async function loadEpisode(newIndex) {
 
   try {
     // Fetch episode data
-    const episodeData = await DrachinAPI.getEpisode(state.slug, state.episodeIndex);
+    const episodeResponse = await DrachinAPI.getEpisode(state.slug, state.episodeIndex);
+    const episodeData = episodeResponse.data || episodeResponse;
 
     // Set video source
     const videoUrl = episodeData.video_url || episodeData.url || episodeData.stream_url;
@@ -246,7 +247,8 @@ async function init() {
 
   // Fetch drama detail to get total episodes and title
   try {
-    const dramaData = await DrachinAPI.getDetail(state.slug);
+    const detailResponse = await DrachinAPI.getDetail(state.slug);
+    const dramaData = detailResponse.data || detailResponse;
     state.totalEpisodes = (dramaData.episodes || []).length;
     state.dramaTitle = dramaData.title || 'Drama';
 

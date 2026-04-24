@@ -263,17 +263,20 @@ async function init() {
     ]);
 
     // Store data in state
-    if (homeData && homeData.slider) {
-      state.sliderData = homeData.slider;
+    if (homeData && homeData.data) {
+      if (homeData.data.slider) state.sliderData = homeData.data.slider;
+      // Fallback recommendations using popular if recommendations key doesn't exist
+      if (homeData.data.recommendations) {
+        state.recData = homeData.data.recommendations;
+      } else if (homeData.data.popular) {
+        state.recData = homeData.data.popular;
+      }
     }
     if (latestData && latestData.data) {
       state.latestData = latestData.data;
     }
     if (popularData && popularData.data) {
       state.popularData = popularData.data;
-    }
-    if (homeData && homeData.recommendations) {
-      state.recData = homeData.recommendations;
     }
 
     // Render sections
