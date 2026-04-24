@@ -4,45 +4,44 @@
  */
 
 import { DrachinAPI } from '../api.js';
-import { renderEpisodeList, showToast } from '../components.js';
-import { getQueryParam, handleImageError } from '../utils.js';
+import { renderDramaCard, Toast, initNavbar } from '../components.js';
+import { getQueryParam, setPageTitle, handleImageError } from '../utils.js';
 import { CSS_CLASSES, ERROR_MESSAGES } from '../config.js';
 
-// State lokal halaman
+// State object
 const state = {
   slug: '',
   episodeIndex: 1,
   isLoading: false,
   data: null,
-  episodes: []
+  totalEpisodes: 0,
+  dramaTitle: ''
 };
 
 // DOM Elements
-const videoElement = document.querySelector('#video-element');
-const videoPlayer = document.querySelector('#video-player');
-const videoLoading = document.querySelector('#video-loading');
-const videoError = document.querySelector('#video-error');
-const videoTitle = document.querySelector('#video-title');
-const videoMeta = document.querySelector('#video-meta');
+const mainVideo = document.querySelector('#main-video');
+const playerLoading = document.querySelector('#player-loading');
+const playerError = document.querySelector('#player-error');
+const playerTitle = document.querySelector('#player-title');
+const playerEpisode = document.querySelector('#player-episode');
 const prevEpisodeBtn = document.querySelector('#prev-episode-btn');
 const nextEpisodeBtn = document.querySelector('#next-episode-btn');
-const episodeListSidebar = document.querySelector('#episode-list');
-const navbarContainer = document.querySelector('.navbar-container');
+const episodeList = document.querySelector('#episode-list');
 
 /**
  * Show loading state
  */
 function showLoading() {
-  videoLoading.classList.remove(CSS_CLASSES.HIDDEN);
-  videoError.classList.add(CSS_CLASSES.HIDDEN);
-  videoElement.style.display = 'none';
+  playerLoading.classList.remove('is-hidden');
+  playerError.classList.add('is-hidden');
+  mainVideo.style.display = 'none';
 }
 
 /**
  * Hide loading state
  */
 function hideLoading() {
-  videoLoading.classList.add(CSS_CLASSES.HIDDEN);
+  playerLoading.classList.add('is-hidden');
 }
 
 /**
@@ -50,11 +49,11 @@ function hideLoading() {
  * @param {string} message - Error message
  */
 function showError(message) {
-  videoLoading.classList.add(CSS_CLASSES.HIDDEN);
-  videoError.classList.remove(CSS_CLASSES.HIDDEN);
-  videoElement.style.display = 'none';
+  playerLoading.classList.add('is-hidden');
+  playerError.classList.remove('is-hidden');
+  mainVideo.style.display = 'none';
   
-  const errorMessage = document.querySelector('.error-message');
+  const errorMessage = playerError.querySelector('.error-message');
   if (errorMessage) {
     errorMessage.textContent = message;
   }
@@ -64,134 +63,147 @@ function showError(message) {
  * Hide error state
  */
 function hideError() {
-  videoError.classList.add(CSS_CLASSES.HIDDEN);
+  playerError.classList.add('is-hidden');
 }
 
 /**
  * Show video player
  */
 function showVideo() {
-  videoElement.style.display = 'block';
+  mainVideo.style.display = 'block';
   hideLoading();
   hideError();
 }
 
 /**
- * Load episode data
+ * Update episode navigation buttons
  */
-async function loadEpisode() {
-  state.slug = getQueryParam('slug');
-  state.episodeIndex = parseInt(getQueryParam('index')) || 1;
-  
+function updateEpisodeButtons() {
+  if (state.episodeIndex === 1) {
+    prevEpisodeBtn.disabled = true;
+  } else {
+    prevEpisodeBtn.disabled = false;
+  }
+
+  if (state.episodeIndex === state.totalEpisodes) {
+    nextEpisodeBtn.disabled = true;
+  } else {
+    nextEpisodeBtn.disabled = false;
+  }
+}
+
+/**
+ * Render episode sidebar
+ * @param {number} totalEpisodes - Total number of episodes
+ * @param {number} currentIndex - Current episode index
+ */
+function renderEpisodeSidebar(totalEpisodes, currentIndex) {
+  const episodes = [];
+  for (let i = 1; i <= totalEpisodes; i++) {
+    const isActive = i === currentIndex;
+    episodes.push(`
+      <button 
+        class="episode-pill ${isActive ? 'is-active' : ''}"
+        data-episode="${i}"
+        aria-label="Episode ${i}"
+      >
+        ${i}
+      </button>
+    `);
+  }
+
+  episodeList.innerHTML = `
+    <div class="episode-list__content">
+      ${episodes.join('')}
+    </div>
+  `;
+
+  // Add event listeners to episode pills
+  const episodePills = episodeList.querySelectorAll('.episode-pill');
+  episodePills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const episodeIndex = parseInt(pill.dataset.episode, 10);
+      loadEpisode(episodeIndex);
+    });
+  });
+}
+
+/**
+ * Load episode
+ * @param {number} newIndex - Episode index to load
+ */
+async function loadEpisode(newIndex) {
+  // Validate slug
   if (!state.slug) {
-    showToast('Slug drama tidak ditemukan', 'error');
-    window.location.href = 'browse.html';
+    Toast.error('Slug drama tidak ditemukan');
+    window.location.href = 'index.html';
     return;
   }
-  
+
+  // Update index if provided
+  if (newIndex) {
+    state.episodeIndex = newIndex;
+  }
+
+  // Update URL params
+  const url = new URL(window.location.href);
+  url.searchParams.set('slug', state.slug);
+  url.searchParams.set('index', state.episodeIndex);
+  window.history.pushState({}, '', url);
+
   state.isLoading = true;
   showLoading();
-  
+
   try {
-    // Get episode data
+    // Fetch episode data
     const episodeData = await DrachinAPI.getEpisode(state.slug, state.episodeIndex);
-    
-    // Get drama detail for episode list
-    const dramaData = await DrachinAPI.getDetail(state.slug);
-    
-    // Store data
-    state.data = episodeData;
-    state.episodes = dramaData.episodes || [];
-    
+
     // Set video source
     const videoUrl = episodeData.video_url || episodeData.url || episodeData.stream_url;
-    
+
     if (videoUrl) {
-      videoElement.src = videoUrl;
-      videoElement.load();
-      
+      mainVideo.src = videoUrl;
+      mainVideo.load();
+
       // Show video when ready
-      videoElement.oncanplay = () => {
+      mainVideo.oncanplay = () => {
         showVideo();
-        videoElement.play().catch(() => {});
+        mainVideo.play().catch(() => {});
       };
-      
+
       // Handle video errors
-      videoElement.onerror = () => {
+      mainVideo.onerror = () => {
         showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
       };
-      
+
       // Handle waiting (buffering)
-      videoElement.onwaiting = () => {
+      mainVideo.onwaiting = () => {
         showLoading();
       };
-      
-      videoElement.onplaying = () => {
+
+      mainVideo.onplaying = () => {
         hideLoading();
       };
     } else {
       showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
     }
-    
-    // Update video info
-    videoTitle.textContent = `${dramaData.title} - ${formatEpisodeLabel(state.episodeIndex)}`;
-    videoMeta.innerHTML = `
-      <span class="meta-item">${dramaData.year || '-'}</span>
-      <span class="meta-item">${state.episodes.length} Episode</span>
-      <span class="meta-item">${dramaData.genres.slice(0, 3).join(', ') || '-'}</span>
-    `;
-    
-    // Update episode list
-    renderEpisodeListSidebar();
-    
+
+    // Update header
+    playerTitle.textContent = state.dramaTitle;
+    playerEpisode.textContent = `Episode ${state.episodeIndex}`;
+
+    // Update episode sidebar
+    renderEpisodeSidebar(state.totalEpisodes, state.episodeIndex);
+    updateEpisodeButtons();
+
     // Update page title
-    document.title = `${dramaData.title} - Ep ${state.episodeIndex} | roxy-drachin`;
-    
-    // Update browser history
-    const url = new URL(window.location.href);
-    url.searchParams.set('slug', state.slug);
-    url.searchParams.set('index', state.episodeIndex);
-    window.history.pushState({}, '', url);
+    setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle}`);
   } catch (error) {
     console.error('Error loading episode:', error);
-    showToast(ERROR_MESSAGES.SERVER_ERROR, 'error');
-    showError(ERROR_MESSAGES.SERVER_ERROR);
+    showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
   } finally {
     state.isLoading = false;
   }
-}
-
-/**
- * Render episode list sidebar
- */
-function renderEpisodeListSidebar() {
-  if (!state.episodes || state.episodes.length === 0) {
-    episodeListSidebar.innerHTML = '<p class="text-muted">Belum ada episode tersedia</p>';
-    return;
-  }
-  
-  const totalEpisodes = state.episodes.length;
-  
-  // Generate episode items
-  const episodesHtml = state.episodes.map((episode, index) => {
-    const episodeIndex = index + 1;
-    const isActive = episodeIndex === state.episodeIndex;
-    
-    return `
-      <a href="watch.html?slug=${state.slug}&index=${episodeIndex}" 
-         class="episode-item ${isActive ? CSS_CLASSES.ACTIVE : ''}"
-         data-episode="${episodeIndex}">
-        <span class="episode-number">${formatEpisodeLabel(episodeIndex)}</span>
-        ${episodeIndex === totalEpisodes ? '<span class="episode-status">Terakhir</span>' : ''}
-      </a>
-    `;
-  }).join('');
-  
-  episodeListSidebar.innerHTML = `
-    <div class="episode-list-content">
-      ${episodesHtml}
-    </div>
-  `;
 }
 
 /**
@@ -200,17 +212,10 @@ function renderEpisodeListSidebar() {
  */
 function changeEpisode(direction) {
   const newIndex = state.episodeIndex + direction;
-  
-  if (newIndex < 1 || newIndex > state.episodes.length) return;
-  
-  // Update URL without reloading
-  const url = new URL(window.location.href);
-  url.searchParams.set('index', newIndex);
-  window.history.pushState({}, '', url);
-  
-  // Load new episode
-  state.episodeIndex = newIndex;
-  loadEpisode();
+
+  if (newIndex < 1 || newIndex > state.totalEpisodes) return;
+
+  loadEpisode(newIndex);
 }
 
 /**
@@ -221,107 +226,39 @@ function retryVideo() {
 }
 
 /**
- * Format episode label
- * @param {number} index - Episode index
- * @returns {string} - Formatted episode label
- */
-function formatEpisodeLabel(index) {
-  return `Episode ${index}`;
-}
-
-/**
- * Initialize navbar
- */
-function initNavbar() {
-  const currentPage = document.body.dataset.page || 'watch';
-  navbarContainer.innerHTML = `
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
-      <div class="navbar-content">
-        <a href="index.html" class="logo" aria-label="roxy-drachin Home">
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20,50 Q50,10 80,50 T20,50" fill="none" stroke="currentColor" stroke-width="8"/>
-            <path d="M20,50 Q50,90 80,50" fill="none" stroke="currentColor" stroke-width="8"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="4"/>
-            <path d="M50,20 L50,80" stroke="currentColor" stroke-width="4"/>
-            <path d="M20,50 L80,50" stroke="currentColor" stroke-width="4"/>
-          </svg>
-          <span>roxy<span style="color: var(--color-accent-primary)">-drachin</span></span>
-        </a>
-        
-        <form class="search-form" role="search" onsubmit="handleSearch(event)">
-          <span class="search-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          <input 
-            type="search" 
-            class="search-input" 
-            placeholder="Cari drama..." 
-            aria-label="Cari drama"
-            autocomplete="off"
-          >
-        </form>
-        
-        <div class="nav-links">
-          <a href="index.html" class="nav-link">Home</a>
-          <a href="browse.html" class="nav-link">Browse</a>
-          <a href="popular.html" class="nav-link">Populer</a>
-        </div>
-        
-        <button class="mobile-menu-btn" aria-label="Menu" onclick="toggleMobileMenu()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-    </nav>
-  `;
-}
-
-/**
- * Handle search
- * @param {Event} event - Form submit event
- */
-function handleSearch(event) {
-  event.preventDefault();
-  
-  const searchInput = document.querySelector('.search-input');
-  const query = searchInput.value.trim();
-  
-  if (query.length < 2) {
-    showToast('Masukkan minimal 2 karakter', 'warning');
-    return;
-  }
-  
-  window.location.href = `search.html?q=${encodeURIComponent(query)}`;
-}
-
-/**
- * Toggle mobile menu
- */
-function toggleMobileMenu() {
-  const navLinks = document.querySelector('.nav-links');
-  if (navLinks) {
-    navLinks.classList.toggle(CSS_CLASSES.VISIBLE);
-  }
-}
-
-/**
  * Initialize page
  */
 async function init() {
+  // Get params from URL
+  state.slug = getQueryParam('slug');
+  state.episodeIndex = parseInt(getQueryParam('index')) || 1;
+
+  // Validate slug
+  if (!state.slug) {
+    Toast.error('Slug drama tidak ditemukan');
+    window.location.href = 'index.html';
+    return;
+  }
+
   // Initialize navbar
   initNavbar();
-  
-  // Load episode
-  await loadEpisode();
-  
-  // Update episode buttons
-  updateEpisodeButtons();
+
+  // Fetch drama detail to get total episodes and title
+  try {
+    const dramaData = await DrachinAPI.getDetail(state.slug);
+    state.totalEpisodes = (dramaData.episodes || []).length;
+    state.dramaTitle = dramaData.title || 'Drama';
+
+    // Update page title
+    setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle}`);
+
+    // Load first episode
+    await loadEpisode(state.episodeIndex);
+  } catch (error) {
+    console.error('Error loading drama detail:', error);
+    Toast.error(ERROR_MESSAGES.NOT_FOUND);
+    window.location.href = 'index.html';
+  }
 }
 
 // Initialize when DOM is ready

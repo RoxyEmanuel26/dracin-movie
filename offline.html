@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline — roxy-drachin</title>
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.6;
+      color: var(--color-text-primary);
+      background-color: var(--color-bg-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4);
+    }
+
+    .offline-icon {
+      font-size: 64px;
+      margin-bottom: var(--space-6);
+    }
+
+    .offline-title {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-4);
+      text-align: center;
+    }
+
+    .offline-message {
+      color: var(--color-text-secondary);
+      text-align: center;
+      max-width: 400px;
+      margin-bottom: var(--space-8);
+      line-height: 1.6;
+    }
+
+    .offline-retry-btn {
+      background: var(--color-accent-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      border-radius: var(--radius-full);
+      padding: var(--space-3) var(--space-8);
+      font-weight: 600;
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: all var(--transition-smooth);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .offline-retry-btn:hover {
+      background: var(--color-accent-hover);
+      box-shadow: 0 0 16px var(--color-accent-glow);
+    }
+
+    .offline-retry-btn:active {
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon">📡</div>
+    <h1 class="offline-title">Tidak Ada Koneksi</h1>
+    <p class="offline-message">Periksa koneksi internet kamu dan coba lagi.</p>
+    <button class="offline-retry-btn" onclick="location.reload()">Coba Lagi</button>
+  </div>
+</body>
+</html>

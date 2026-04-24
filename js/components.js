@@ -1,454 +1,359 @@
 /**
- * Components Module
- * Fungsi-fungsi untuk render komponen UI
+ * Components Module - UI Rendering Functions
+ * Semua fungsi rendering untuk komponen UI
  */
 
-import { CSS_CLASSES, ERROR_MESSAGES } from './config.js';
-import { handleImageError, truncate } from './utils.js';
+import { sanitize, validateUrl } from './security.js';
+import { truncate } from './utils.js';
+import { SITE_NAME, SITE_TAGLINE, CSS_CLASSES, TOAST_DURATION_MS, ERROR_MESSAGES } from './config.js';
 
-// === DRAMA CARD COMPONENT ===
 /**
- * Render drama card component
- * @param {object} drama - Drama object dari API
- * @param {object} options - Render options
+ * Render drama card dengan BEM class
+ * @param {object} drama - Data drama dari API
+ * @param {object} options - Rendering options
  * @returns {string} - HTML string card
  */
 export function renderDramaCard(drama, options = {}) {
   const {
     showRank = false,
-    showBadge = false,
-    badgeText = 'BARU',
     rank = null,
-    isHorizontal = false
+    showBadge = false,
+    badgeText = '',
+    badgeType = 'new'
   } = options;
-  
-  const {
-    title,
-    slug,
-    poster,
-    rating,
-    episodes,
-    genres = [],
-    year,
-    status
-  } = drama;
-  
-  // Generate poster URL dengan fallback
-  const posterUrl = poster || '';
-  
-  // Format genres
-  const genreList = genres.slice(0, 2).join(', ');
-  
-  // Card classes
-  const cardClasses = isHorizontal 
-    ? 'drama-card drama-card-horizontal'
-    : 'drama-card';
-  
-  // Rank badge
-  const rankBadge = showRank && rank !== null
-    ? `<div class="drama-card-rank">${rank}</div>`
-    : '';
-  
-  // New badge
-  const badge = showBadge
-    ? `<div class="drama-card-badge">${badgeText}</div>`
-    : '';
-  
-  // Rating stars
-  const ratingStars = rating
-    ? `<span class="drama-card-rating">★ ${rating}</span>`
-    : '';
-  
-  // Episode count
-  const episodeCount = episodes
-    ? `<span class="drama-card-episodes">${episodes} eps</span>`
-    : '';
-  
-  // Status badge
-  const statusBadge = status
-    ? `<span class="drama-card-status">${status}</span>`
-    : '';
-  
-  // Card HTML
+
+  // Extract dan sanitize data drama
+  const title = sanitize(drama.title || drama.judul || 'Judul Tidak Tersedia');
+  const slug = sanitizeSlug(drama.slug || drama.slug || '');
+  const posterRaw = drama.poster || drama.thumbnail || drama.image || '';
+  const poster = validateUrl(posterRaw) || '/assets/poster-placeholder.svg';
+  const totalEpisodes = drama.total_episode || drama.episodes || 0;
+  const genre = sanitize(drama.genre || drama.kategori || 'Drama');
+
+  // Sanitize badge text jika ada
+  const badge = showBadge && badgeText ? sanitize(badgeText) : '';
+  const rankDisplay = showRank && rank !== null ? `<span class="drama-card__rank">${rank}</span>` : '';
+
+  // Format genre label
+  const genreLabel = genre ? `<span class="drama-card__genre">${genre}</span>` : '';
+
+  // Format episode label
+  const episodeLabel = totalEpisodes > 0 ? `<span class="drama-card__ep">${totalEpisodes} eps</span>` : '';
+
+  // Badge HTML
+  const badgeHTML = badge ? `<span class="badge badge--${badgeType}">${badge}</span>` : '';
+
   return `
-    <div class="${cardClasses}" data-slug="${slug}">
-      ${rankBadge}
-      ${badge}
-      <div class="drama-card-image-wrapper">
+    <article class="drama-card">
+      ${rankDisplay}
+      <div class="drama-card__poster-wrap">
         <img 
-          src="${posterUrl}" 
+          class="drama-card__poster" 
+          src="${poster}" 
           alt="${title}"
-          class="drama-card-image"
           loading="lazy"
-          onerror="handleImageError(this)"
-        >
-        <div class="drama-card-overlay">
-          <h3 class="drama-card-title">${title}</h3>
-          <div class="drama-card-meta">
-            <span>${genreList}</span>
-            <span>${year}</span>
-          </div>
-        </div>
+          onerror="this.src='/assets/poster-placeholder.svg'"
+        />
+        ${badgeHTML}
       </div>
-    </div>
+      <div class="drama-card__info">
+        <h3 class="drama-card__title">${title}</h3>
+        ${genreLabel}
+        ${episodeLabel}
+      </div>
+    </article>
   `;
 }
 
-// === SKELETON CARD COMPONENT ===
 /**
- * Render skeleton card component
- * @param {number} count - Number of skeleton cards to render
+ * Sanitize slug helper (local for components)
+ * @param {string} slug - Slug to sanitize
+ * @returns {string} - Sanitized slug
+ */
+function sanitizeSlug(slug) {
+  if (!slug || typeof slug !== 'string') {
+    return '';
+  }
+  return slug.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 200);
+}
+
+/**
+ * Render skeleton card untuk loading state
+ * @param {number} count - Jumlah skeleton card
  * @returns {string} - HTML string skeleton cards
  */
 export function renderSkeletonCard(count = 1) {
   let html = '';
-  
   for (let i = 0; i < count; i++) {
     html += `
-      <div class="skeleton-card">
-        <div class="skeleton-image"></div>
-        <div class="skeleton-content">
-          <div class="skeleton-title"></div>
-          <div class="skeleton-meta"></div>
+      <div class="skeleton skeleton--shimmer">
+        <div class="skeleton__poster"></div>
+        <div class="skeleton__info">
+          <div class="skeleton__title"></div>
+          <div class="skeleton__genre"></div>
         </div>
       </div>
     `;
   }
-  
   return html;
 }
 
-// === ERROR STATE COMPONENT ===
 /**
- * Render error state component
+ * Render error state dengan tombol retry
  * @param {string} message - Error message
- * @param {function} retryCallback - Callback function on retry
- * @returns {string} - HTML string error state
+ * @param {string} containerId - ID container untuk inject
+ * @param {function} retryFn - Function untuk retry
  */
-export function renderErrorState(message, retryCallback) {
-  return `
+export function renderErrorState(message, containerId, retryFn) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = `
     <div class="error-state">
-      <div class="error-icon">✕</div>
-      <h3 class="error-title">Terjadi Kesalahan</h3>
-      <p class="error-message">${message}</p>
-      <button class="btn btn-primary" onclick="retryCallback()">
-        <span>Coba Lagi</span>
-      </button>
+      <div class="error-state__icon">✕</div>
+      <h3 class="error-state__title">Terjadi kesalahan</h3>
+      <p class="error-state__message">${sanitize(message)}</p>
+      <button class="btn btn--primary" onclick="${retryFn.name || 'retry'}()">Coba Lagi</button>
     </div>
   `;
+
+  // Attach retry function if it's a named function
+  if (typeof retryFn === 'function') {
+    window[retryFn.name || 'retry'] = retryFn;
+  }
 }
 
-// === EMPTY STATE COMPONENT ===
 /**
- * Render empty state component
- * @param {string} title - Title
- * @param {string} subtitle - Subtitle
- * @param {string} actionHTML - Action button HTML
- * @returns {string} - HTML string empty state
+ * Render empty state dengan SVG icon
+ * @param {HTMLElement} container - Container element
+ * @param {string} title - Judul empty state
+ * @param {string} subtitle - Subtitle empty state
+ * @param {string} actionHTML - HTML untuk tombol action
  */
-export function renderEmptyState(title, subtitle, actionHTML = '') {
-  return `
+export function renderEmptyState(container, title, subtitle, actionHTML) {
+  if (!container) return;
+
+  container.innerHTML = `
     <div class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <h3 class="empty-title">${title}</h3>
-      <p class="empty-subtitle">${subtitle}</p>
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+      </svg>
+      <h3 class="empty-state__title">${sanitize(title)}</h3>
+      <p class="empty-state__subtitle">${sanitize(subtitle)}</p>
       ${actionHTML}
     </div>
   `;
 }
 
-// === NAVBAR COMPONENT ===
 /**
- * Render navbar component
- * @param {string} currentPage - Current page identifier
- * @returns {string} - HTML string navbar
+ * Toast object untuk notifikasi
  */
-export function renderNavbar(currentPage = 'home') {
-  return `
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
-      <div class="navbar-content">
-        <!-- Logo -->
-        <a href="index.html" class="logo" aria-label="roxy-drachin Home">
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20,50 Q50,10 80,50 T20,50" fill="none" stroke="currentColor" stroke-width="8"/>
-            <path d="M20,50 Q50,90 80,50" fill="none" stroke="currentColor" stroke-width="8"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="4"/>
-            <path d="M50,20 L50,80" stroke="currentColor" stroke-width="4"/>
-            <path d="M20,50 L80,50" stroke="currentColor" stroke-width="4"/>
+export const Toast = {
+  container: null,
+
+  /**
+   * Initialize toast container
+   */
+  init() {
+    if (this.container) return;
+
+    this.container = document.createElement('div');
+    this.container.id = 'toast-container';
+    this.container.setAttribute('role', 'status');
+    this.container.setAttribute('aria-live', 'polite');
+    this.container.style.position = 'fixed';
+    this.container.style.top = 'var(--space-4)';
+    this.container.style.right = 'var(--space-4)';
+    this.container.style.zIndex = '9999';
+    this.container.style.pointerEvents = 'none';
+    this.container.style.display = 'flex';
+    this.container.style.flexDirection = 'column';
+    this.container.style.gap = 'var(--space-2)';
+    document.body.appendChild(this.container);
+  },
+
+  /**
+   * Show toast notification
+   * @param {string} message - Message to show
+   * @param {string} type - Type: success, error, warning, info
+   * @param {number} duration - Duration in ms
+   */
+  show(message, type = 'info', duration = TOAST_DURATION_MS) {
+    if (!this.container) this.init();
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'polite');
+    toast.style.minWidth = '300px';
+    toast.style.maxWidth = '400px';
+    toast.style.padding = 'var(--space-4)';
+    toast.style.borderRadius = 'var(--radius-md)';
+    toast.style.background = 'var(--color-bg-overlay)';
+    toast.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.4)';
+    toast.style.transform = 'translateX(120%)';
+    toast.style.opacity = '0';
+    toast.style.transition = 'transform var(--transition-smooth), opacity var(--transition-smooth)';
+    toast.style.pointerEvents = 'auto';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = 'var(--space-3)';
+
+    // Icon based on type
+    let icon = 'ℹ';
+    if (type === 'success') icon = '✓';
+    if (type === 'error') icon = '✕';
+    if (type === 'warning') icon = '⚠';
+
+    toast.innerHTML = `<span class="toast__message">${sanitize(message)}</span>`;
+
+    this.container.appendChild(toast);
+
+    // Trigger reflow untuk animasi
+    void toast.offsetWidth;
+
+    toast.style.transform = 'translateX(0)';
+    toast.style.opacity = '1';
+
+    // Auto remove setelah duration
+    setTimeout(() => {
+      toast.style.transform = 'translateX(120%)';
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }, duration);
+  },
+
+  /**
+   * Show success toast
+   * @param {string} message - Success message
+   * @param {number} duration - Duration in ms
+   */
+  success(message, duration = TOAST_DURATION_MS) {
+    this.show(message, 'success', duration);
+  },
+
+  /**
+   * Show error toast
+   * @param {string} message - Error message
+   * @param {number} duration - Duration in ms
+   */
+  error(message, duration = TOAST_DURATION_MS) {
+    this.show(message, 'error', duration);
+  },
+
+  /**
+   * Show warning toast
+   * @param {string} message - Warning message
+   * @param {number} duration - Duration in ms
+   */
+  warning(message, duration = TOAST_DURATION_MS) {
+    this.show(message, 'warning', duration);
+  },
+
+  /**
+   * Show info toast
+   * @param {string} message - Info message
+   * @param {number} duration - Duration in ms
+   */
+  info(message, duration = TOAST_DURATION_MS) {
+    this.show(message, 'info', duration);
+  }
+};
+
+/**
+ * Initialize navbar dengan sticky effect dan search
+ */
+export function initNavbar() {
+  const navbarPlaceholder = document.getElementById('navbar-placeholder');
+  if (!navbarPlaceholder) return;
+
+  // Inject navbar HTML
+  navbarPlaceholder.innerHTML = `
+    <nav class="navbar" id="main-navbar">
+      <div class="navbar__container">
+        <a href="index.html" class="navbar__logo">
+          <svg class="navbar__logo-icon" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 15L5 5H10L15 15L10 25H5L10 15Z" fill="white"/>
+            <path d="M20 5V25H25V15H30V25H35V5H30V15H25V5H20Z" fill="white"/>
+            <path d="M45 5V25H50V15H55V25H60V5H55V15H50V5H45Z" fill="white"/>
+            <path d="M70 5V25H75V15H80V25H85V5H80V15H75V5H70Z" fill="white"/>
+            <text x="90" y="20" font-family="Arial, sans-serif" font-size="14" fill="white" font-weight="bold">roxy</text>
+            <text x="125" y="20" font-family="Arial, sans-serif" font-size="14" fill="#C62828" font-weight="bold">-drachin</text>
           </svg>
-          <span>roxy<span style="color: var(--color-accent-primary)">-drachin</span></span>
+          <span class="navbar__logo-text">roxy-drachin</span>
         </a>
-        
-        <!-- Search -->
-        <form class="search-form" role="search" onsubmit="handleSearch(event)">
-          <span class="search-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
+
+        <form class="navbar__search" id="navbar-search-form">
           <input 
-            type="search" 
-            class="search-input" 
-            placeholder="Cari drama..." 
+            type="text" 
+            class="navbar__search-input search-input" 
+            placeholder="Cari drama..."
             aria-label="Cari drama"
-            autocomplete="off"
-          >
+          />
+          <button type="submit" class="navbar__search-btn" aria-label="Cari">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21L16.65 16.65"/>
+            </svg>
+          </button>
         </form>
-        
-        <!-- Navigation Links -->
-        <div class="nav-links">
-          <a href="index.html" class="nav-link ${currentPage === 'home' ? CSS_CLASSES.ACTIVE : ''}">Home</a>
-          <a href="browse.html" class="nav-link ${currentPage === 'browse' ? CSS_CLASSES.ACTIVE : ''}">Browse</a>
-          <a href="popular.html" class="nav-link ${currentPage === 'popular' ? CSS_CLASSES.ACTIVE : ''}">Populer</a>
-        </div>
-        
-        <!-- Mobile Menu Button -->
-        <button class="mobile-menu-btn" aria-label="Menu" onclick="toggleMobileMenu()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
+
+        <ul class="navbar__links">
+          <li><a href="index.html" class="navbar__link navbar__link--active">Home</a></li>
+          <li><a href="browse.html" class="navbar__link">Browse</a></li>
+          <li><a href="popular.html" class="navbar__link">Popular</a></li>
+          <li><a href="search.html" class="navbar__link">Search</a></li>
+        </ul>
       </div>
     </nav>
   `;
-}
 
-// === SLIDER COMPONENT ===
-/**
- * Render hero slider component
- * @param {array} slides - Array of slide data
- * @param {object} options - Slider options
- * @returns {string} - HTML string slider
- */
-export function renderSlider(slides, options = {}) {
-  const {
-    autoPlay = true,
-    interval = 5000,
-    showControls = true,
-    showDots = true
-  } = options;
-  
-  if (!slides || slides.length === 0) {
-    return '';
+  // Setup search debounce
+  const searchForm = document.getElementById('navbar-search-form');
+  const searchInput = document.getElementById('navbar-search-form')?.querySelector('.search-input');
+
+  if (searchForm && searchInput) {
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = searchInput.value.trim();
+      if (query.length >= 2) {
+        window.location.href = `search.html?q=${encodeURIComponent(query)}`;
+      }
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      debouncedSearch(e.target.value);
+    });
   }
-  
-  // Generate slides
-  const slidesHtml = slides.map((slide, index) => `
-    <div class="hero-slide ${index === 0 ? CSS_CLASSES.ACTIVE : ''}" data-index="${index}">
-      <img 
-        src="${slide.poster}" 
-        alt="${slide.title}"
-        class="hero-slide-image"
-        loading="${index === 0 ? 'eager' : 'lazy'}"
-        onerror="handleImageError(this)"
-      >
-      <div class="hero-slide-overlay"></div>
-      <div class="hero-slide-content">
-        <h2 class="hero-slide-title">${slide.title}</h2>
-        <p class="hero-slide-synopsis">${truncate(slide.synopsis, 200)}</p>
-        <div class="hero-slide-meta">
-          ${slide.year ? `<span>${slide.year}</span>` : ''}
-          ${slide.rating ? `<span>★ ${slide.rating}</span>` : ''}
-          ${slide.genres ? slide.genres.slice(0, 3).map(g => `<span class="hero-slide-genre">${g}</span>`).join('') : ''}
-        </div>
-        <div class="hero-slide-actions">
-          <a href="watch.html?slug=${slide.slug}&index=1" class="hero-slide-btn hero-slide-btn-primary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            Tonton Sekarang
-          </a>
-          <a href="detail.html?slug=${slide.slug}" class="hero-slide-btn hero-slide-btn-secondary">
-            Detail
-          </a>
-        </div>
-      </div>
-    </div>
-  `).join('');
-  
-  // Generate dots
-  const dotsHtml = showDots ? `
-    <div class="slider-dots">
-      ${slides.map((_, index) => `
-        <button class="slider-dot ${index === 0 ? CSS_CLASSES.ACTIVE : ''}" 
-                data-slide="${index}" 
-                aria-label="Slide ${index + 1}">
-        </button>
-      `).join('')}
-    </div>
-  ` : '';
-  
-  // Generate controls
-  const controlsHtml = showControls ? `
-    <div class="slider-controls">
-      <button class="slider-btn slider-btn-prev" aria-label="Slide sebelumnya">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
-      </button>
-      <button class="slider-btn slider-btn-next" aria-label="Slide berikutnya">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-      </button>
-    </div>
-  ` : '';
-  
-  return `
-    <div class="hero-slider" 
-         data-autoplay="${autoPlay}" 
-         data-interval="${interval}">
-      ${slidesHtml}
-      ${controlsHtml}
-      ${dotsHtml}
-    </div>
-  `;
-}
 
-// === EPISODE LIST COMPONENT ===
-/**
- * Render episode list component
- * @param {array} episodes - Array of episode data
- * @param {number} currentEpisode - Current episode index
- * @returns {string} - HTML string episode list
- */
-export function renderEpisodeList(episodes, currentEpisode = 1) {
-  if (!episodes || episodes.length === 0) {
-    return '<p class="text-muted">Belum ada episode tersedia</p>';
+  // Setup sticky navbar dengan backdrop-filter
+  const navbar = document.getElementById('main-navbar');
+  if (navbar) {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        navbar.classList.add('navbar--scrolled');
+      } else {
+        navbar.classList.remove('navbar--scrolled');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
   }
-  
-  const totalEpisodes = episodes.length;
-  
-  // Generate episode items
-  const episodesHtml = episodes.map((episode, index) => {
-    const episodeIndex = index + 1;
-    const isActive = episodeIndex === currentEpisode;
-    const isLast = episodeIndex === totalEpisodes;
-    
-    return `
-      <a href="watch.html?slug=${episode.slug}&index=${episodeIndex}" 
-         class="episode-item ${isActive ? CSS_CLASSES.ACTIVE : ''}"
-         data-episode="${episodeIndex}">
-        <span class="episode-number">${formatEpisodeLabel(episodeIndex)}</span>
-        ${isLast ? '<span class="episode-status">Terakhir</span>' : ''}
-      </a>
-    `;
-  }).join('');
-  
-  return `
-    <div class="episode-list">
-      <h3 class="episode-list-title">Daftar Episode</h3>
-      <div class="episode-list-content">
-        ${episodesHtml}
-      </div>
-    </div>
-  `;
-}
 
-// === BADGE COMPONENT ===
-/**
- * Render badge component
- * @param {string} text - Badge text
- * @param {string} type - Badge type (primary, secondary, success, warning, error)
- * @returns {string} - HTML string badge
- */
-export function renderBadge(text, type = 'primary') {
-  return `<span class="badge badge-${type}">${text}</span>`;
+  // Setup active link berdasarkan pathname
+  const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+  const links = document.querySelectorAll('.navbar__link');
+  links.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href === currentPath) {
+      link.classList.add('navbar__link--active');
+    } else {
+      link.classList.remove('navbar__link--active');
+    }
+  });
 }
-
-// === TOAST NOTIFICATION ===
-/**
- * Show toast notification
- * @param {string} message - Toast message
- * @param {string} type - Toast type (success, error, warning, info)
- */
-export function showToast(message, type = 'info') {
-  const container = document.querySelector('.toast-container');
-  
-  if (!container) return;
-  
-  // Create toast element
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.setAttribute('role', 'status');
-  toast.setAttribute('aria-live', 'polite');
-  
-  // Toast content
-  const icon = {
-    success: '✓',
-    error: '✕',
-    warning: '⚠',
-    info: 'ℹ'
-  }[type] || 'ℹ';
-  
-  toast.innerHTML = `
-    <div class="toast-content">
-      <span class="toast-icon">${icon}</span>
-      <span class="toast-message">${message}</span>
-      <button class="toast-close" aria-label="Tutup notifikasi" onclick="this.parentElement.remove()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-  `;
-  
-  // Add to container
-  container.appendChild(toast);
-  
-  // Auto remove after 3 seconds
-  setTimeout(() => {
-    toast.style.animation = 'fadeOut var(--transition-fast)';
-    setTimeout(() => {
-      toast.remove();
-    }, 150);
-  }, 3000);
-}
-
-// === FORMATTING UTILITIES ===
-/**
- * Format episode label
- * @param {number} index - Episode index
- * @returns {string} - Formatted episode label
- */
-export function formatEpisodeLabel(index) {
-  return `Episode ${index}`;
-}
-
-// === INITIALIZATION ===
-/**
- * Initialize all components
- */
-export function initComponents() {
-  // Initialize navbar
-  const navbarContainer = document.querySelector('.navbar-container');
-  if (navbarContainer) {
-    const currentPage = document.body.dataset.page || 'home';
-    navbarContainer.innerHTML = renderNavbar(currentPage);
-  }
-  
-  // Initialize toast container
-  const toastContainer = document.querySelector('.toast-container');
-  if (!toastContainer) {
-    const body = document.querySelector('body');
-    body.insertAdjacentHTML('beforeend', '<div class="toast-container"></div>');
-  }
-}
-
-// Export all functions
-export {
-  renderDramaCard,
-  renderSkeletonCard,
-  renderErrorState,
-  renderEmptyState,
-  renderNavbar,
-  renderSlider,
-  renderEpisodeList,
-  renderBadge,
-  showToast,
-  formatEpisodeLabel
-};

@@ -3,7 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>roxy-drachin - Streaming Drama China Terbaru</title>
+  
+  <!-- Resource Hints -->
+  <link rel="dns-prefetch" href="https://api.sankavollerei.com">
+  <link rel="preconnect" href="https://api.sankavollerei.com" crossorigin>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0A0A0A">
+  <meta name="color-scheme" content="dark">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Nonton drama China terbaik subtitle Indonesia di roxy-drachin. Update terbaru setiap hari.">
+  <meta name="keywords" content="drama china, streaming drama, roxy-drachin, drama subtitle indonesia">
+  <meta name="author" content="roxy-drachin">
+  <meta name="robots" content="index, follow">
+  <meta property="og:site_name" content="roxy-drachin">
+  <meta property="og:locale" content="id_ID">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:url" content="https://roxy-drachin.vercel.app/">
+  <meta property="og:title" content="roxy-drachin - Streaming Drama China Terbaik">
+  <meta property="og:description" content="Drama China Terbaik Subtitle Indonesia">
+  
+  <!-- Twitter -->
+  <meta name="twitter:title" content="roxy-drachin - Streaming Drama China Terbaik">
+  <meta name="twitter:description" content="Drama China Terbaik Subtitle Indonesia">
+  <meta name="twitter:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
   
   <!-- Font Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,6 +41,7 @@
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
   
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
@@ -23,17 +51,15 @@
   <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
   
   <!-- Navbar Container -->
-  <div class="navbar-container"></div>
+  <div id="navbar-placeholder"></div>
   
   <!-- Main Content -->
   <main id="main-content">
     <!-- Hero Slider -->
-    <section class="hero-slider-section">
-      <div id="hero-slider"></div>
-    </section>
+    <section id="hero-slider" class="hero-slider-section"></section>
     
     <!-- Drama Terbaru -->
-    <section class="section">
+    <section id="section-latest" class="section">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">Drama Terbaru</h2>
@@ -49,7 +75,7 @@
     </section>
     
     <!-- Drama Populer -->
-    <section class="section bg-secondary">
+    <section id="section-popular" class="section bg-secondary">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">Sedang Trending</h2>
@@ -65,7 +91,7 @@
     </section>
     
     <!-- Rekomendasi -->
-    <section class="section">
+    <section id="section-recommendation" class="section">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">Mungkin Kamu Suka</h2>
@@ -76,45 +102,10 @@
   </main>
   
   <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <div class="footer-logo">roxy<span>-drachin</span></div>
-          <p class="footer-text">Platform streaming drama China terlengkap dan terpercaya. Nonton drama China terbaru dengan subtitle Indonesia.</p>
-        </div>
-        <div class="footer-links">
-          <h4>Menu</h4>
-          <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="browse.html">Browse</a></li>
-            <li><a href="popular.html">Populer</a></li>
-            <li><a href="search.html">Cari</a></li>
-          </ul>
-        </div>
-        <div class="footer-links">
-          <h4>Genre</h4>
-          <ul>
-            <li><a href="browse.html?genre=romance">Romance</a></li>
-            <li><a href="browse.html?genre=fantasy">Fantasy</a></li>
-            <li><a href="browse.html?genre=thriller">Thriller</a></li>
-            <li><a href="browse.html?genre=comedy">Comedy</a></li>
-          </ul>
-        </div>
-        <div class="footer-links">
-          <h4>Hubungi Kami</h4>
-          <ul>
-            <li><a href="mailto:info@roxy-drachin.com">info@roxy-drachin.com</a></li>
-            <li><a href="https://twitter.com/roxydrachin" target="_blank" rel="noopener">Twitter</a></li>
-            <li><a href="https://instagram.com/roxydrachin" target="_blank" rel="noopener">Instagram</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p class="footer-bottom-text">© 2025 roxy-drachin. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+  <footer id="footer-placeholder"></footer>
+  
+  <!-- Back to Top Button -->
+  <button id="back-to-top" class="back-to-top" aria-label="Kembali ke atas">↑</button>
   
   <!-- JavaScript Modules -->
   <script type="module" src="js/config.js"></script>
@@ -122,5 +113,14 @@
   <script type="module" src="js/api.js"></script>
   <script type="module" src="js/components.js"></script>
   <script type="module" src="js/pages/home.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

@@ -3,7 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Browse Drama - roxy-drachin</title>
+  <title>Jelajahi Drama | roxy-drachin</title>
+  
+  <!-- Resource Hints -->
+  <link rel="dns-prefetch" href="https://api.sankavollerei.com">
+  <link rel="preconnect" href="https://api.sankavollerei.com" crossorigin>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0A0A0A">
+  <meta name="color-scheme" content="dark">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Jelajahi koleksi drama China terlengkap di roxy-drachin. Terbaru dan terpopuler.">
+  <meta name="keywords" content="drama china, streaming drama, roxy-drachin, drama subtitle indonesia">
+  <meta name="author" content="roxy-drachin">
+  <meta name="robots" content="index, follow">
+  <meta property="og:site_name" content="roxy-drachin">
+  <meta property="og:locale" content="id_ID">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:url" content="https://roxy-drachin.vercel.app/browse.html">
+  <meta property="og:title" content="Jelajahi Drama | roxy-drachin">
+  <meta property="og:description" content="Jelajahi koleksi drama China terlengkap di roxy-drachin. Terbaru dan terpopuler.">
+  
+  <!-- Twitter -->
+  <meta name="twitter:title" content="Jelajahi Drama | roxy-drachin">
+  <meta name="twitter:description" content="Jelajahi koleksi drama China terlengkap di roxy-drachin. Terbaru dan terpopuler.">
+  <meta name="twitter:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
   
   <!-- Font Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +52,7 @@
   <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
   
   <!-- Navbar Container -->
-  <div class="navbar-container"></div>
+  <div id="navbar-placeholder"></div>
   
   <!-- Main Content -->
   <main id="main-content">
@@ -40,8 +68,8 @@
     <section class="filter-section">
       <div class="container">
         <div class="filter-tabs">
-          <button class="filter-tab is-active" data-type="latest">Terbaru</button>
-          <button class="filter-tab" data-type="popular">Populer</button>
+          <button id="tab-latest" class="filter-tab is-active" data-type="latest">Terbaru</button>
+          <button id="tab-popular" class="filter-tab" data-type="popular">Populer</button>
         </div>
       </div>
     </section>
@@ -53,7 +81,7 @@
         
         <!-- Load More Button -->
         <div class="load-more-container">
-          <button id="load-more-btn" class="btn btn-primary">
+          <button id="btn-load-more" class="btn btn--primary">
             <span class="btn-text">Load More</span>
             <span class="btn-spinner spinner"></span>
           </button>
@@ -63,28 +91,10 @@
   </main>
   
   <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <div class="footer-logo">roxy<span>-drachin</span></div>
-          <p class="footer-text">Platform streaming drama China terlengkap dan terpercaya.</p>
-        </div>
-        <div class="footer-links">
-          <h4>Menu</h4>
-          <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="browse.html" class="is-active">Browse</a></li>
-            <li><a href="popular.html">Populer</a></li>
-            <li><a href="search.html">Cari</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p class="footer-bottom-text">© 2025 roxy-drachin. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+  <footer id="footer-placeholder"></footer>
+  
+  <!-- Back to Top Button -->
+  <button id="back-to-top" class="back-to-top" aria-label="Kembali ke atas">↑</button>
   
   <!-- JavaScript Modules -->
   <script type="module" src="js/config.js"></script>
@@ -92,5 +102,14 @@
   <script type="module" src="js/api.js"></script>
   <script type="module" src="js/components.js"></script>
   <script type="module" src="js/pages/browse.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

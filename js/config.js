@@ -4,14 +4,42 @@
  */
 
 // API Configuration
-export const API_CONFIG = {
-  BASE_URL: 'https://api.sankavollerei.com',
-  TIMEOUT: 10000, // 10 detik timeout
-  RATE_LIMIT: 50, // 50 requests per minute
-  CACHE_TTL: 5 * 60 * 1000, // 5 menit cache TTL
-};
+export const API_BASE_URL = 'https://api.sankavollerei.com';
+export const API_TIMEOUT_MS = 10000;
+export const API_RATE_LIMIT = 45;
+export const API_RATE_WINDOW_MS = 60000;
 
-// Application constants
+// Cache TTL (dalam milidetik)
+export const CACHE_TTL_DEFAULT = 300000;      // 5 menit
+export const CACHE_TTL_HOME = 600000;         // 10 menit
+export const CACHE_TTL_LATEST = 300000;       // 5 menit
+export const CACHE_TTL_POPULAR = 600000;      // 10 menit
+export const CACHE_TTL_DETAIL = 1800000;      // 30 menit
+export const CACHE_TTL_EPISODE = 120000;      // 2 menit
+export const CACHE_TTL_SEARCH = 0;            // tidak di-cache
+
+// UI Configuration
+export const SLIDER_AUTOPLAY_MS = 5000;
+export const SEARCH_DEBOUNCE_MS = 500;
+export const TOAST_DURATION_MS = 3000;
+export const SKELETON_MIN_COUNT = 10;
+export const CARDS_PER_PAGE = 20;
+export const FADE_IN_DURATION_MS = 300;
+export const BACK_TO_TOP_THRESHOLD_PX = 400;
+
+// Meta Configuration
+export const SITE_NAME = 'roxy-drachin';
+export const SITE_TAGLINE = 'Drama China Terbaik Subtitle Indonesia';
+export const SITE_URL = 'https://roxy-drachin.vercel.app';
+export const OG_IMAGE = '/assets/og-image.jpg';
+
+// Length Limits
+export const TITLE_MAX_LENGTH = 60;
+export const SYNOPSIS_PREVIEW_LENGTH = 200;
+export const SEARCH_QUERY_MAX_LENGTH = 100;
+export const SLUG_MAX_LENGTH = 200;
+
+// Application constants (retained for compatibility)
 export const APP_CONFIG = {
   NAME: 'roxy-drachin',
   VERSION: '1.0.0',
@@ -22,11 +50,11 @@ export const APP_CONFIG = {
     POPULAR: 12,
   },
   SLIDER: {
-    AUTOPLAY_INTERVAL: 5000, // 5 detik
-    TRANSITION_DURATION: 600, // 600ms
+    AUTOPLAY_INTERVAL: SLIDER_AUTOPLAY_MS,
+    TRANSITION_DURATION: 600,
   },
   SEARCH: {
-    DEBOUNCE_DELAY: 500, // 500ms debounce
+    DEBOUNCE_DELAY: SEARCH_DEBOUNCE_MS,
     MIN_QUERY_LENGTH: 2,
   },
   PAGINATION: {

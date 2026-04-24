@@ -3,7 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Watch Drama - roxy-drachin</title>
+  <title>Nonton | roxy-drachin</title>
+  
+  <!-- Resource Hints -->
+  <link rel="dns-prefetch" href="https://api.sankavollerei.com">
+  <link rel="preconnect" href="https://api.sankavollerei.com" crossorigin>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0A0A0A">
+  <meta name="color-scheme" content="dark">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Streaming drama China gratis subtitle Indonesia di roxy-drachin.">
+  <meta name="keywords" content="streaming drama, nonton drama china, roxy-drachin">
+  <meta name="author" content="roxy-drachin">
+  <meta name="robots" content="index, follow">
+  <meta property="og:site_name" content="roxy-drachin">
+  <meta property="og:locale" content="id_ID">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:url" content="https://roxy-drachin.vercel.app/watch.html">
+  <meta property="og:title" content="Nonton | roxy-drachin">
+  <meta property="og:description" content="Streaming drama China gratis subtitle Indonesia di roxy-drachin.">
+  
+  <!-- Twitter -->
+  <meta name="twitter:title" content="Nonton | roxy-drachin">
+  <meta name="twitter:description" content="Streaming drama China gratis subtitle Indonesia di roxy-drachin.">
+  <meta name="twitter:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
   
   <!-- Font Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,87 +52,72 @@
   <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
   
   <!-- Navbar Container -->
-  <div class="navbar-container"></div>
+  <div id="navbar-placeholder"></div>
   
   <!-- Main Content -->
   <main id="main-content">
-    <!-- Video Player Section -->
-    <section class="video-section">
+    <!-- Player Header -->
+    <div id="player-header" class="player-header">
       <div class="container">
-        <div class="video-container">
-          <div class="video-player-wrapper">
-            <div id="video-player" class="video-player">
-              <video id="video-element" controls autoplay playsinline>
-                <source src="" type="video/mp4">
-                Browser Anda tidak mendukung video tag.
-              </video>
-              <div id="video-loading" class="video-loading">
-                <div class="spinner"></div>
-                <p class="video-loading-text">Memuat video...</p>
-              </div>
-              <div id="video-error" class="video-error is-hidden">
-                <div class="error-icon">✕</div>
-                <h3 class="error-title">Video Tidak Dapat Diputar</h3>
-                <p class="error-message">Silakan coba episode lain atau refresh halaman</p>
-                <button class="btn btn-primary" onclick="retryVideo()">Coba Lagi</button>
-              </div>
-            </div>
-            <div class="video-info">
-              <h1 id="video-title" class="video-title"></h1>
-              <div id="video-meta" class="video-meta"></div>
-            </div>
-          </div>
-          
-          <div class="video-controls">
-            <button id="prev-episode-btn" class="btn btn-secondary" onclick="changeEpisode(-1)">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 18l-6-6 6-6"/>
-              </svg>
-              Episode Sebelumnya
-            </button>
-            <button id="next-episode-btn" class="btn btn-primary" onclick="changeEpisode(1)">
-              Episode Berikutnya
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </button>
-          </div>
+        <h1 id="player-title" class="player-title"></h1>
+        <span id="player-episode" class="player-episode"></span>
+      </div>
+    </div>
+    
+    <!-- Player Wrap -->
+    <div id="player-wrap" class="player-wrap">
+      <div class="player-content">
+        <video id="main-video" class="main-video" controls autoplay playsinline>
+          <source src="" type="video/mp4">
+          Browser Anda tidak mendukung video tag.
+        </video>
+        
+        <!-- Loading Overlay -->
+        <div id="player-loading" class="player-loading is-hidden">
+          <div class="spinner"></div>
+          <p class="player-loading-text">Memuat video...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div id="player-error" class="player-error is-hidden">
+          <div class="error-icon">✕</div>
+          <h3 class="error-title">Video Tidak Dapat Diputar</h3>
+          <p class="error-message">Silakan coba episode lain atau refresh halaman</p>
+          <button class="btn btn--primary" onclick="retryVideo()">Coba Lagi</button>
         </div>
       </div>
-    </section>
+      
+      <!-- Episode Navigation -->
+      <div id="episode-nav" class="episode-nav">
+        <button id="prev-episode-btn" class="btn btn--outline" onclick="changeEpisode(-1)" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+          Sebelumnya
+        </button>
+        <button id="next-episode-btn" class="btn btn--primary" onclick="changeEpisode(1)" disabled>
+          Berikutnya
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
     
     <!-- Episode Sidebar -->
-    <section class="episode-sidebar">
+    <div id="episode-sidebar" class="episode-sidebar">
       <div class="container">
-        <h2 class="sidebar-title">Daftar Episode</h2>
-        <div id="episode-list" class="episode-list-sidebar"></div>
+        <h2 class="section-title">Daftar Episode</h2>
+        <div id="episode-list" class="episode-list"></div>
       </div>
-    </section>
+    </div>
   </main>
   
   <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <div class="footer-logo">roxy<span>-drachin</span></div>
-          <p class="footer-text">Platform streaming drama China terlengkap dan terpercaya.</p>
-        </div>
-        <div class="footer-links">
-          <h4>Menu</h4>
-          <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="browse.html">Browse</a></li>
-            <li><a href="popular.html">Populer</a></li>
-            <li><a href="search.html">Cari</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p class="footer-bottom-text">© 2025 roxy-drachin. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+  <footer id="footer-placeholder"></footer>
+  
+  <!-- Back to Top Button -->
+  <button id="back-to-top" class="back-to-top" aria-label="Kembali ke atas">↑</button>
   
   <!-- JavaScript Modules -->
   <script type="module" src="js/config.js"></script>
@@ -112,5 +125,14 @@
   <script type="module" src="js/api.js"></script>
   <script type="module" src="js/components.js"></script>
   <script type="module" src="js/pages/watch.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

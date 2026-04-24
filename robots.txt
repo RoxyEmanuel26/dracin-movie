@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /watch.html
+
+Sitemap: https://roxy-drachin.vercel.app/sitemap.xml

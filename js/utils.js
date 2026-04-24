@@ -3,8 +3,6 @@
  * Helper functions untuk operasi umum
  */
 
-import { CSS_CLASSES, ERROR_MESSAGES } from './config.js';
-
 // Debounce function - menunda eksekusi fungsi sampai delay tertentu
 export function debounce(fn, delay) {
   let timeoutId;
@@ -180,12 +178,10 @@ export function getViewportCategory() {
 // Debounce promise - untuk async operations
 export function debouncePromise(fn, delay) {
   let timeoutId;
-  let lastResolve;
   
   return function (...args) {
     return new Promise((resolve) => {
       clearTimeout(timeoutId);
-      lastResolve = resolve;
       
       timeoutId = setTimeout(() => {
         fn.apply(this, args).then(resolve);
@@ -246,7 +242,7 @@ export function formatDuration(seconds) {
 
 // Generate unique ID
 export function generateId(prefix = 'id') {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
 // Parse JSON safely

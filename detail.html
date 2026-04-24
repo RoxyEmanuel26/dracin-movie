@@ -3,7 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detail Drama - roxy-drachin</title>
+  
+  <!-- Resource Hints -->
+  <link rel="dns-prefetch" href="https://api.sankavollerei.com">
+  <link rel="preconnect" href="https://api.sankavollerei.com" crossorigin>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0A0A0A">
+  <meta name="color-scheme" content="dark">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Detail dan informasi lengkap drama China di roxy-drachin.">
+  <meta name="keywords" content="detail drama, streaming drama, roxy-drachin">
+  <meta name="author" content="roxy-drachin">
+  <meta name="robots" content="index, follow">
+  <meta property="og:site_name" content="roxy-drachin">
+  <meta property="og:locale" content="id_ID">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:url" content="https://roxy-drachin.vercel.app/detail.html">
+  <meta property="og:title" content="Detail Drama | roxy-drachin">
+  <meta property="og:description" content="Detail dan informasi lengkap drama China di roxy-drachin.">
+  
+  <!-- Twitter -->
+  <meta name="twitter:title" content="Detail Drama | roxy-drachin">
+  <meta name="twitter:description" content="Detail dan informasi lengkap drama China di roxy-drachin.">
+  <meta name="twitter:image" content="https://roxy-drachin.vercel.app/assets/og-image.jpg">
   
   <!-- Font Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,37 +51,49 @@
   <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
   
   <!-- Navbar Container -->
-  <div class="navbar-container"></div>
+  <div id="navbar-placeholder"></div>
+  
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li class="breadcrumb__item"><a href="index.html" class="breadcrumb__link">Home</a></li>
+      <li class="breadcrumb__item"><a href="browse.html" class="breadcrumb__link">Browse</a></li>
+      <li class="breadcrumb__item breadcrumb__item--current" aria-current="page">
+        <span id="breadcrumb-title">Judul Drama</span>
+      </li>
+    </ol>
+  </nav>
   
   <!-- Main Content -->
   <main id="main-content">
-    <!-- Hero Section -->
-    <section class="hero-section">
+    <!-- Hero Detail Section -->
+    <section id="hero-detail" class="hero-detail-section">
       <div class="container">
-        <div class="hero-content">
-          <div class="hero-poster">
-            <img id="hero-poster-img" src="" alt="Drama Poster" loading="lazy">
+        <div class="hero-detail-content">
+          <div class="hero-detail__poster">
+            <img id="hero-detail-poster" src="" alt="Drama Poster" loading="lazy">
           </div>
-          <div class="hero-info">
-            <h1 id="hero-title" class="hero-title"></h1>
-            <div id="hero-meta" class="hero-meta"></div>
-            <p id="hero-synopsis" class="hero-synopsis"></p>
-            <div id="hero-actions" class="hero-actions"></div>
+          <div class="hero-detail__info">
+            <h1 id="hero-detail-title" class="hero-detail__title"></h1>
+            <div id="hero-detail-meta" class="hero-detail__meta"></div>
+            <div id="hero-detail-actions" class="hero-detail__actions"></div>
+            <div id="hero-detail-synopsis" class="hero-detail__synopsis"></div>
           </div>
         </div>
       </div>
     </section>
     
-    <!-- Episode List -->
-    <section class="episode-section">
+    <!-- Episode List Section -->
+    <section id="episode-list" class="section">
       <div class="container">
         <h2 class="section-title">Daftar Episode</h2>
-        <div id="episode-list" class="episode-list"></div>
+        <div id="episode-grid" class="episode-grid"></div>
+        <div id="episode-range-selector" class="episode-range-selector"></div>
       </div>
     </section>
     
-    <!-- Recommendations -->
-    <section class="recommendation-section">
+    <!-- Recommendation Section -->
+    <section id="recommendation" class="section bg-secondary">
       <div class="container">
         <h2 class="section-title">Drama Serupa</h2>
         <div id="recommendation-grid" class="drama-grid scroll-x"></div>
@@ -63,28 +102,10 @@
   </main>
   
   <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <div class="footer-logo">roxy<span>-drachin</span></div>
-          <p class="footer-text">Platform streaming drama China terlengkap dan terpercaya.</p>
-        </div>
-        <div class="footer-links">
-          <h4>Menu</h4>
-          <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="browse.html">Browse</a></li>
-            <li><a href="popular.html">Populer</a></li>
-            <li><a href="search.html">Cari</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p class="footer-bottom-text">© 2025 roxy-drachin. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+  <footer id="footer-placeholder"></footer>
+  
+  <!-- Back to Top Button -->
+  <button id="back-to-top" class="back-to-top" aria-label="Kembali ke atas">↑</button>
   
   <!-- JavaScript Modules -->
   <script type="module" src="js/config.js"></script>
@@ -92,5 +113,14 @@
   <script type="module" src="js/api.js"></script>
   <script type="module" src="js/components.js"></script>
   <script type="module" src="js/pages/detail.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

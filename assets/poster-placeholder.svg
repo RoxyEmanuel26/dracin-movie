@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <!-- Background -->
+  <rect width="200" height="300" fill="#1A1A1A"/>
+  
+  <!-- Film/Gambar Icon -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="2">
+    <!-- Outer rectangle -->
+    <rect x="70" y="100" width="60" height="50" rx="4"/>
+    <!-- Small circle (lens) -->
+    <circle cx="80" cy="110" r="4"/>
+    <!-- Diagonal line -->
+    <line x1="120" y1="100" x2="130" y2="150"/>
+  </g>
+  
+  <!-- Text "No Poster" -->
+  <text x="100" y="230" text-anchor="middle" fill="#5A5A5A" font-family="Arial, sans-serif" font-size="14" font-weight="500">
+    No Poster
+  </text>
+</svg>

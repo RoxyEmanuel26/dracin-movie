@@ -4,21 +4,16 @@
  */
 
 import { DrachinAPI } from '../api.js';
-import { renderDramaCard, renderSkeletonCard, renderSlider, showToast } from '../components.js';
+import { renderDramaCard, renderSkeletonCard, Toast, initNavbar } from '../components.js';
 import { debounce, handleImageError } from '../utils.js';
-import { CSS_CLASSES, ERROR_MESSAGES, SELECTORS } from '../config.js';
+import { CSS_CLASSES, ERROR_MESSAGES, SELECTORS, CARDS_PER_PAGE, BACK_TO_TOP_THRESHOLD_PX } from '../config.js';
 
-// State lokal halaman
+// State object
 const state = {
-  currentPage: 1,
-  isLoading: false,
-  hasMore: true,
-  data: {
-    slider: [],
-    latest: [],
-    popular: [],
-    recommendations: []
-  }
+  sliderData: [],
+  latestData: [],
+  popularData: [],
+  recData: []
 };
 
 // DOM Elements
@@ -26,89 +21,104 @@ const heroSliderContainer = document.querySelector('#hero-slider');
 const latestGrid = document.querySelector('#latest-grid');
 const popularGrid = document.querySelector('#popular-grid');
 const recommendationGrid = document.querySelector('#recommendation-grid');
-const navbarContainer = document.querySelector('.navbar-container');
+const backToTopBtn = document.querySelector('#back-to-top');
 
 /**
- * Show skeleton loading
- */
-function showSkeleton() {
-  heroSliderContainer.innerHTML = '<div class="skeleton-card" style="height: 80vh; width: 100%;"></div>';
-  latestGrid.innerHTML = renderSkeletonCard(8);
-  popularGrid.innerHTML = renderSkeletonCard(8);
-  recommendationGrid.innerHTML = renderSkeletonCard(5);
-}
-
-/**
- * Render hero slider
+ * Render hero slider dengan autoplay, dots, dan swipe support
  * @param {array} slides - Array of slide data
  */
-function renderHeroSlider(slides) {
+export function initHeroSlider(slides) {
   if (!slides || slides.length === 0) {
     heroSliderContainer.innerHTML = '';
     return;
   }
-  
-  heroSliderContainer.innerHTML = renderSlider(slides, {
-    autoPlay: true,
-    interval: 5000,
-    showControls: true,
-    showDots: true
-  });
-  
-  // Initialize slider functionality
-  initSlider();
-}
 
-/**
- * Initialize slider functionality
- */
-function initSlider() {
-  const slider = document.querySelector('.hero-slider');
-  if (!slider) return;
-  
-  const slides = slider.querySelectorAll('.hero-slide');
-  const dots = slider.querySelectorAll('.slider-dot');
-  const prevBtn = slider.querySelector('.slider-btn-prev');
-  const nextBtn = slider.querySelector('.slider-btn-next');
-  
-  let currentIndex = 0;
+  let currentSlide = 0;
   let autoPlayInterval = null;
-  const autoPlay = slider.dataset.autoplay === 'true';
-  const interval = parseInt(slider.dataset.interval) || 5000;
-  
+  const autoPlayDuration = 5000;
+
+  // Build slider HTML
+  let slidesHTML = '';
+  let dotsHTML = '';
+
+  slides.forEach((slide, index) => {
+    const title = slide.title || slide.judul || 'Judul Tidak Tersedia';
+    const slug = slide.slug || '';
+    const posterRaw = slide.poster || slide.thumbnail || slide.image || '';
+    const poster = posterRaw || '/assets/poster-placeholder.svg';
+    const genre = slide.genre || slide.kategori || '';
+    const synopsis = (slide.synopsis || slide.sinopsis || '').slice(0, 200);
+
+    slidesHTML += `
+      <div class="hero-slide ${index === 0 ? 'is-active' : ''}" data-index="${index}">
+        <div class="hero-slide__poster" style="background-image: url('${poster}')"></div>
+        <div class="hero-slide__overlay"></div>
+        <div class="hero-slide__content">
+          <h1 class="hero-slide__title">${title}</h1>
+          <p class="hero-slide__synopsis">${synopsis}</p>
+          ${genre ? `<span class="hero-slide__badge badge badge--new">${genre}</span>` : ''}
+          <div class="hero-slide__actions">
+            <a href="watch.html?slug=${encodeURIComponent(slug)}" class="btn btn--primary">Tonton Sekarang</a>
+            <a href="detail.html?slug=${encodeURIComponent(slug)}" class="btn btn--outline">Detail</a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    dotsHTML += `<button class="slider-dot ${index === 0 ? 'is-active' : ''}" data-slide="${index}" aria-label="Slide ${index + 1}"></button>`;
+  });
+
+  heroSliderContainer.innerHTML = `
+    <div class="hero-slider">
+      <div class="hero-slider__slides">
+        ${slidesHTML}
+      </div>
+      <div class="hero-slider__controls">
+        <button class="slider-btn slider-btn-prev" aria-label="Slide sebelumnya">←</button>
+        <button class="slider-btn slider-btn-next" aria-label="Slide selanjutnya">→</button>
+      </div>
+      <div class="hero-slider__dots">
+        ${dotsHTML}
+      </div>
+    </div>
+  `;
+
   // Update active slide
   function updateSlide(index) {
+    const slides = heroSliderContainer.querySelectorAll('.hero-slide');
+    const dots = heroSliderContainer.querySelectorAll('.slider-dot');
+
     slides.forEach((slide, i) => {
-      slide.classList.toggle(CSS_CLASSES.ACTIVE, i === index);
+      slide.classList.toggle('is-active', i === index);
     });
-    
+
     dots.forEach((dot, i) => {
-      dot.classList.toggle(CSS_CLASSES.ACTIVE, i === index);
+      dot.classList.toggle('is-active', i === index);
     });
-    
-    currentIndex = index;
+
+    currentSlide = index;
   }
-  
+
   // Next slide
   function nextSlide() {
-    const newIndex = (currentIndex + 1) % slides.length;
+    const slides = heroSliderContainer.querySelectorAll('.hero-slide');
+    const newIndex = (currentSlide + 1) % slides.length;
     updateSlide(newIndex);
   }
-  
+
   // Previous slide
   function prevSlide() {
-    const newIndex = (currentIndex - 1 + slides.length) % slides.length;
+    const slides = heroSliderContainer.querySelectorAll('.hero-slide');
+    const newIndex = (currentSlide - 1 + slides.length) % slides.length;
     updateSlide(newIndex);
   }
-  
+
   // Auto play
   function startAutoPlay() {
-    if (autoPlay) {
-      stopAutoPlay();
-      autoPlayInterval = setInterval(nextSlide, interval);
-    }
+    stopAutoPlay();
+    autoPlayInterval = setInterval(nextSlide, autoPlayDuration);
   }
-  
+
   // Stop auto play
   function stopAutoPlay() {
     if (autoPlayInterval) {
@@ -116,40 +126,49 @@ function initSlider() {
       autoPlayInterval = null;
     }
   }
-  
+
   // Event listeners
+  const prevBtn = heroSliderContainer.querySelector('.slider-btn-prev');
+  const nextBtn = heroSliderContainer.querySelector('.slider-btn-next');
+  const dots = heroSliderContainer.querySelectorAll('.slider-dot');
+
   if (prevBtn) {
     prevBtn.addEventListener('click', prevSlide);
   }
-  
+
   if (nextBtn) {
     nextBtn.addEventListener('click', nextSlide);
   }
-  
-  dots.forEach((dot, index) => {
-    dot.addEventListener('click', () => updateSlide(index));
+
+  dots.forEach((dot) => {
+    dot.addEventListener('click', () => {
+      const index = parseInt(dot.dataset.slide, 10);
+      updateSlide(index);
+    });
   });
-  
+
   // Pause on hover
-  slider.addEventListener('mouseenter', stopAutoPlay);
-  slider.addEventListener('mouseleave', startAutoPlay);
-  
-  // Start auto play
-  startAutoPlay();
-  
-  // Mobile swipe support
+  const slider = heroSliderContainer.querySelector('.hero-slider');
+  if (slider) {
+    slider.addEventListener('mouseenter', stopAutoPlay);
+    slider.addEventListener('mouseleave', startAutoPlay);
+  }
+
+  // Touch swipe support
   let touchStartX = 0;
   let touchEndX = 0;
-  
-  slider.addEventListener('touchstart', (e) => {
-    touchStartX = e.changedTouches[0].screenX;
-  });
-  
-  slider.addEventListener('touchend', (e) => {
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-  });
-  
+
+  if (slider) {
+    slider.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    slider.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    });
+  }
+
   function handleSwipe() {
     const swipeThreshold = 50;
     if (touchEndX < touchStartX - swipeThreshold) {
@@ -159,34 +178,38 @@ function initSlider() {
       prevSlide();
     }
   }
+
+  // Start auto play
+  startAutoPlay();
 }
 
 /**
- * Render latest dramas
+ * Render latest dramas section
  * @param {array} dramas - Array of drama data
  */
-function renderLatestDramas(dramas) {
+function renderLatestSection(dramas) {
   if (!dramas || dramas.length === 0) {
-    latestGrid.innerHTML = renderEmptyState('Tidak ada drama terbaru', 'Coba lagi nanti');
+    latestGrid.innerHTML = '';
     return;
   }
-  
+
   latestGrid.innerHTML = dramas.map(drama => renderDramaCard(drama, {
     showBadge: true,
-    badgeText: 'BARU'
+    badgeText: 'BARU',
+    badgeType: 'new'
   })).join('');
 }
 
 /**
- * Render popular dramas
+ * Render popular dramas section
  * @param {array} dramas - Array of drama data
  */
-function renderPopularDramas(dramas) {
+function renderPopularSection(dramas) {
   if (!dramas || dramas.length === 0) {
-    popularGrid.innerHTML = renderEmptyState('Tidak ada drama populer', 'Coba lagi nanti');
+    popularGrid.innerHTML = '';
     return;
   }
-  
+
   popularGrid.innerHTML = dramas.map((drama, index) => renderDramaCard(drama, {
     showRank: true,
     rank: index + 1
@@ -194,170 +217,26 @@ function renderPopularDramas(dramas) {
 }
 
 /**
- * Render recommendations
+ * Render recommendation section
  * @param {array} dramas - Array of drama data
  */
-function renderRecommendations(dramas) {
+function renderRecommendationSection(dramas) {
   if (!dramas || dramas.length === 0) {
-    recommendationGrid.innerHTML = renderEmptyState('Tidak ada rekomendasi', 'Coba lagi nanti');
+    recommendationGrid.innerHTML = '';
     return;
   }
-  
+
   recommendationGrid.innerHTML = dramas.map(drama => renderDramaCard(drama)).join('');
 }
 
 /**
- * Render empty state
- * @param {string} title - Title
- * @param {string} subtitle - Subtitle
- * @returns {string} - HTML string
+ * Show skeleton loading untuk semua section
  */
-function renderEmptyState(title, subtitle) {
-  return `
-    <div class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <h3 class="empty-title">${title}</h3>
-      <p class="empty-subtitle">${subtitle}</p>
-    </div>
-  `;
-}
-
-/**
- * Load home data
- */
-async function loadHomeData() {
-  try {
-    const homeData = await DrachinAPI.getHome();
-    
-    // Extract data from response
-    const slider = homeData.slider || [];
-    const latest = homeData.latest || [];
-    const popular = homeData.popular || [];
-    const recommendations = homeData.recommendations || [];
-    
-    // Store in state
-    state.data.slider = slider;
-    state.data.latest = latest;
-    state.data.popular = popular;
-    state.data.recommendations = recommendations;
-    
-    // Render components
-    renderHeroSlider(slider);
-    renderLatestDramas(latest);
-    renderPopularDramas(popular);
-    renderRecommendations(recommendations);
-    
-    // Update page title
-    document.title = 'Home | roxy-drachin';
-  } catch (error) {
-    console.error('Error loading home data:', error);
-    showToast(ERROR_MESSAGES.SERVER_ERROR, 'error');
-    
-    // Show error state
-    heroSliderContainer.innerHTML = renderErrorState(ERROR_MESSAGES.SERVER_ERROR, loadHomeData);
-    latestGrid.innerHTML = renderErrorState(ERROR_MESSAGES.SERVER_ERROR, loadHomeData);
-    popularGrid.innerHTML = renderErrorState(ERROR_MESSAGES.SERVER_ERROR, loadHomeData);
-    recommendationGrid.innerHTML = renderErrorState(ERROR_MESSAGES.SERVER_ERROR, loadHomeData);
-  }
-}
-
-/**
- * Handle search
- * @param {Event} event - Form submit event
- */
-function handleSearch(event) {
-  event.preventDefault();
-  
-  const searchInput = document.querySelector('.search-input');
-  const query = searchInput.value.trim();
-  
-  if (query.length < 2) {
-    showToast('Masukkan minimal 2 karakter', 'warning');
-    return;
-  }
-  
-  window.location.href = `search.html?q=${encodeURIComponent(query)}`;
-}
-
-/**
- * Debounced search handler
- */
-const debouncedSearchHandler = debounce((event) => {
-  const query = event.target.value.trim();
-  
-  if (query.length >= 2) {
-    // Prefetch search results
-    DrachinAPI.search(query).catch(() => {});
-  }
-}, 500);
-
-/**
- * Initialize navbar
- */
-function initNavbar() {
-  const currentPage = document.body.dataset.page || 'home';
-  navbarContainer.innerHTML = `
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
-      <div class="navbar-content">
-        <a href="index.html" class="logo" aria-label="roxy-drachin Home">
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20,50 Q50,10 80,50 T20,50" fill="none" stroke="currentColor" stroke-width="8"/>
-            <path d="M20,50 Q50,90 80,50" fill="none" stroke="currentColor" stroke-width="8"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="4"/>
-            <path d="M50,20 L50,80" stroke="currentColor" stroke-width="4"/>
-            <path d="M20,50 L80,50" stroke="currentColor" stroke-width="4"/>
-          </svg>
-          <span>roxy<span style="color: var(--color-accent-primary)">-drachin</span></span>
-        </a>
-        
-        <form class="search-form" role="search" onsubmit="handleSearch(event)">
-          <span class="search-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          <input 
-            type="search" 
-            class="search-input" 
-            placeholder="Cari drama..." 
-            aria-label="Cari drama"
-            autocomplete="off"
-          >
-        </form>
-        
-        <div class="nav-links">
-          <a href="index.html" class="nav-link is-active">Home</a>
-          <a href="browse.html" class="nav-link">Browse</a>
-          <a href="popular.html" class="nav-link">Populer</a>
-        </div>
-        
-        <button class="mobile-menu-btn" aria-label="Menu" onclick="toggleMobileMenu()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-    </nav>
-  `;
-  
-  // Add event listener to search input
-  const searchInput = document.querySelector('.search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', debouncedSearchHandler);
-  }
-}
-
-/**
- * Toggle mobile menu
- */
-function toggleMobileMenu() {
-  const navLinks = document.querySelector('.nav-links');
-  if (navLinks) {
-    navLinks.classList.toggle(CSS_CLASSES.VISIBLE);
-  }
+function showSkeleton() {
+  heroSliderContainer.innerHTML = '<div class="skeleton skeleton--shimmer" style="height: 60vh;"></div>';
+  latestGrid.innerHTML = renderSkeletonCard(CARDS_PER_PAGE);
+  popularGrid.innerHTML = renderSkeletonCard(CARDS_PER_PAGE);
+  recommendationGrid.innerHTML = renderSkeletonCard(CARDS_PER_PAGE);
 }
 
 /**
@@ -366,27 +245,78 @@ function toggleMobileMenu() {
 async function init() {
   // Show skeleton
   showSkeleton();
-  
+
   // Initialize navbar
   initNavbar();
-  
-  // Load data
-  await loadHomeData();
-  
-  // Add scroll listener for navbar
-  let lastScrollY = window.scrollY;
-  const navbar = document.querySelector('.navbar');
-  
-  window.addEventListener('scroll', () => {
-    const currentScrollY = window.scrollY;
-    
-    if (currentScrollY > 100) {
-      navbar.classList.add(CSS_CLASSES.SCROLLED);
-    } else {
-      navbar.classList.remove(CSS_CLASSES.SCROLLED);
+
+  // Fetch data in parallel
+  try {
+    const [homeData, latestData, popularData] = await Promise.all([
+      DrachinAPI.getHome().catch(() => null),
+      DrachinAPI.getLatest().catch(() => null),
+      DrachinAPI.getPopular().catch(() => null)
+    ]);
+
+    // Store data in state
+    if (homeData && homeData.slider) {
+      state.sliderData = homeData.slider;
     }
-    
-    lastScrollY = currentScrollY;
+    if (latestData && latestData.data) {
+      state.latestData = latestData.data;
+    }
+    if (popularData && popularData.data) {
+      state.popularData = popularData.data;
+    }
+    if (homeData && homeData.recommendations) {
+      state.recData = homeData.recommendations;
+    }
+
+    // Render sections
+    initHeroSlider(state.sliderData);
+
+    if (state.latestData.length > 0) {
+      renderLatestSection(state.latestData);
+    } else {
+      latestGrid.innerHTML = '';
+    }
+
+    if (state.popularData.length > 0) {
+      renderPopularSection(state.popularData);
+    } else {
+      popularGrid.innerHTML = '';
+    }
+
+    if (state.recData.length > 0) {
+      renderRecommendationSection(state.recData);
+    } else {
+      recommendationGrid.innerHTML = '';
+    }
+
+    // Update page title
+    document.title = 'Home | roxy-drachin';
+  } catch (error) {
+    console.error('Error loading home data:', error);
+    Toast.error(ERROR_MESSAGES.SERVER_ERROR);
+  }
+
+  // Back to top button logic
+  const handleScroll = () => {
+    if (window.scrollY > BACK_TO_TOP_THRESHOLD_PX) {
+      backToTopBtn.classList.add('is-visible');
+    } else {
+      backToTopBtn.classList.remove('is-visible');
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll(); // Initial check
+
+  // Back to top button click
+  backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   });
 }
 
