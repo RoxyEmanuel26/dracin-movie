@@ -44,7 +44,13 @@ export function renderDramaCard(drama, options = {}) {
   const badgeHTML = badge ? `<span class="badge badge--${badgeType}">${badge}</span>` : '';
 
   // Build link URL
-  const detailUrl = slug ? `detail.html?slug=${encodeURIComponent(slug)}` : '#';
+  let detailUrl = '#';
+  if (slug) {
+    detailUrl = `detail.html?slug=${encodeURIComponent(slug)}`;
+    if (poster && !poster.includes('poster-placeholder.svg')) {
+      detailUrl += `&poster=${encodeURIComponent(poster)}`;
+    }
+  }
 
   return `
     <a href="${detailUrl}" class="drama-card-link" aria-label="${title}">

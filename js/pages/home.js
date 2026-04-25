@@ -73,7 +73,7 @@ export function initHeroSlider(slides) {
           ${genre ? `<span class="hero-slide__badge badge badge--new">${genre}</span>` : ''}
           <div class="hero-slide__actions">
             <a href="watch.html?slug=${slug}" class="btn btn--primary">Tonton Sekarang</a>
-            <a href="detail.html?slug=${slug}" class="btn btn--outline">Detail</a>
+            <a href="detail.html?slug=${slug}${poster && !poster.includes('poster-placeholder.svg') ? `&poster=${encodeURIComponent(poster)}` : ''}" class="btn btn--outline">Detail</a>
           </div>
         </div>
       </div>

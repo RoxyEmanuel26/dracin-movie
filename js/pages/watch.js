@@ -190,7 +190,7 @@ async function loadEpisode(newIndex) {
       mainVideo.addEventListener('waiting', onWaiting);
       mainVideo.addEventListener('playing', onPlaying);
     } else {
-      showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
+      showError(episodeData.message || episodeResponse.message || ERROR_MESSAGES.VIDEO_UNPLAYABLE);
     }
 
     // Update header

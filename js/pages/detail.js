@@ -60,7 +60,8 @@ function renderHeroDetailSection(drama) {
   } = drama;
 
   // Extract data with fallbacks
-  const posterUrl = poster || drama.thumbnail || drama.image || '';
+  const queryPoster = getQueryParam('poster');
+  const posterUrl = poster || drama.thumbnail || drama.image || queryPoster || '';
 
   // Set poster
   heroDetailPoster.style.display = 'block';
