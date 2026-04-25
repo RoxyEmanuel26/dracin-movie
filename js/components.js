@@ -282,15 +282,12 @@ export function initNavbar() {
     <nav class="navbar" id="main-navbar">
       <div class="navbar__container">
         <a href="index.html" class="navbar__logo">
-          <svg class="navbar__logo-icon" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 15L5 5H10L15 15L10 25H5L10 15Z" fill="white"/>
-            <path d="M20 5V25H25V15H30V25H35V5H30V15H25V5H20Z" fill="white"/>
-            <path d="M45 5V25H50V15H55V25H60V5H55V15H50V5H45Z" fill="white"/>
-            <path d="M70 5V25H75V15H80V25H85V5H80V15H75V5H70Z" fill="white"/>
-            <text x="90" y="20" font-family="Arial, sans-serif" font-size="14" fill="white" font-weight="bold">roxy</text>
-            <text x="125" y="20" font-family="Arial, sans-serif" font-size="14" fill="#C62828" font-weight="bold">-drachin</text>
+          <svg class="navbar__logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
-          <span class="navbar__logo-text">roxy-drachin</span>
+          <span class="navbar__logo-text">
+            roxy<span class="navbar__logo-accent">drachin</span>
+          </span>
         </a>
 
         <form class="navbar__search" id="navbar-search-form">
@@ -380,25 +377,44 @@ export function initFooter() {
   if (!footerPlaceholder) return;
 
   footerPlaceholder.innerHTML = `
-    <div class="footer">
+    <footer class="footer">
       <div class="footer__container">
         <div class="footer__brand">
-          <div class="footer__brand-name">roxy<span style="color: var(--color-accent-primary)">-drachin</span></div>
-          <p class="footer__brand-tagline">Platform streaming drama China terlengkap dan terpercaya.</p>
+          <a href="index.html" class="footer__logo">
+            <svg class="footer__logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span class="footer__logo-text">roxy<span class="footer__logo-accent">drachin</span></span>
+          </a>
+          <p class="footer__brand-tagline">Platform streaming web app drama China paling eksklusif dan premium.</p>
         </div>
-        <div>
-          <h4 class="footer__title">Menu</h4>
-          <ul class="footer__links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="browse.html">Browse</a></li>
-            <li><a href="popular.html">Populer</a></li>
-            <li><a href="search.html">Cari</a></li>
-          </ul>
+        
+        <div class="footer__nav-group">
+          <div class="footer__nav-section">
+            <h4 class="footer__title">Eksplorasi</h4>
+            <ul class="footer__links">
+              <li><a href="index.html">Beranda Utama</a></li>
+              <li><a href="browse.html">Telusuri Semua</a></li>
+              <li><a href="popular.html">Sedang Populer</a></li>
+            </ul>
+          </div>
+          
+          <div class="footer__nav-section">
+            <h4 class="footer__title">Bantuan</h4>
+            <ul class="footer__links">
+              <li><a href="search.html">Pencarian</a></li>
+              <li><a href="#">FAQ & Panduan</a></li>
+              <li><a href="#">Syarat Ketentuan</a></li>
+            </ul>
+          </div>
         </div>
       </div>
-      <div class="footer__copyright">
-        <p>© ${new Date().getFullYear()} roxy-drachin. All rights reserved.</p>
+      
+      <div class="footer__bottom">
+        <div class="footer__copyright">
+          <p>&copy; ${new Date().getFullYear()} <strong>ROXYDRACHIN</strong>. Dibuat dengan <span>&hearts;</span> untuk pecinta drachin.</p>
+        </div>
       </div>
-    </div>
+    </footer>
   `;
 }

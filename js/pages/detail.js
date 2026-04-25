@@ -59,9 +59,12 @@ function renderHeroDetailSection(drama) {
     synopsis
   } = drama;
 
+  // Extract data with fallbacks
+  const posterUrl = poster || drama.thumbnail || drama.image || '';
+
   // Set poster
   heroDetailPoster.style.display = 'block';
-  heroDetailPoster.src = validateUrl(poster) || '/assets/poster-placeholder.svg';
+  heroDetailPoster.src = validateUrl(posterUrl) || '/assets/poster-placeholder.svg';
   heroDetailPoster.alt = title;
   heroDetailPoster.onerror = () => handleImageError(heroDetailPoster);
 
@@ -75,28 +78,45 @@ function renderHeroDetailSection(drama) {
   const safeRating = sanitize(String(rating || ''));
   const safeGenres = genres.map(g => sanitize(g));
   
-  heroDetailMeta.innerHTML = `
-    <div class="hero-detail__meta-item">
-      <span class="meta-label">Tahun:</span>
-      <span class="meta-value">${safeYear || '-'}</span>
-    </div>
-    <div class="hero-detail__meta-item">
-      <span class="meta-label">Episode:</span>
-      <span class="meta-value">${totalEpisodes}</span>
-    </div>
-    <div class="hero-detail__meta-item">
-      <span class="meta-label">Status:</span>
-      <span class="meta-value">${safeStatus || '-'}</span>
-    </div>
-    <div class="hero-detail__meta-item">
-      <span class="meta-label">Rating:</span>
-      <span class="meta-value">${safeRating ? `★ ${safeRating}` : '-'}</span>
-    </div>
-    <div class="hero-detail__meta-item">
-      <span class="meta-label">Genre:</span>
-      <span class="meta-value">${safeGenres.slice(0, 3).join(', ') || '-'}</span>
-    </div>
-  `;
+  let metaHTML = '';
+  if (safeYear && safeYear !== '-' && safeYear !== 'Unknown') {
+    metaHTML += `
+      <div class="hero-detail__meta-item">
+        <span class="meta-label">Tahun:</span>
+        <span class="meta-value">${safeYear}</span>
+      </div>`;
+  }
+  if (totalEpisodes > 0) {
+    metaHTML += `
+      <div class="hero-detail__meta-item">
+        <span class="meta-label">Episode:</span>
+        <span class="meta-value">${totalEpisodes}</span>
+      </div>`;
+  }
+  if (safeStatus && safeStatus !== '-' && safeStatus !== 'Unknown') {
+    metaHTML += `
+      <div class="hero-detail__meta-item">
+        <span class="meta-label">Status:</span>
+        <span class="meta-value">${safeStatus}</span>
+      </div>`;
+  }
+  if (safeRating && safeRating !== '-' && safeRating !== '0') {
+    metaHTML += `
+      <div class="hero-detail__meta-item">
+        <span class="meta-label">Rating:</span>
+        <span class="meta-value">★ ${safeRating}</span>
+      </div>`;
+  }
+  const genresStr = safeGenres.slice(0, 3).join(', ');
+  if (genresStr && genresStr !== '-' && genresStr !== 'Unknown') {
+    metaHTML += `
+      <div class="hero-detail__meta-item">
+        <span class="meta-label">Genre:</span>
+        <span class="meta-value">${genresStr}</span>
+      </div>`;
+  }
+  
+  heroDetailMeta.innerHTML = metaHTML;
 
   // Set synopsis dengan collapsible
   const safeSynopsis = sanitize(synopsis || '');
@@ -174,11 +194,7 @@ function renderEpisodeList(episodes) {
     `);
   }
 
-  episodeGrid.innerHTML = `
-    <div class="episode-grid__content">
-      ${episodeItems.join('')}
-    </div>
-  `;
+  episodeGrid.innerHTML = episodeItems.join('');
 
   // Setup range selector jika total episode > 50
   if (totalEpisodes > 50) {

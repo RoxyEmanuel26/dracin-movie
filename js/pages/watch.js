@@ -116,11 +116,7 @@ function renderEpisodeSidebar(totalEpisodes, currentIndex) {
     `);
   }
 
-  episodeList.innerHTML = `
-    <div class="episode-list__content">
-      ${episodes.join('')}
-    </div>
-  `;
+  episodeList.innerHTML = episodes.join('');
 
   // Add event listeners to episode pills
   const episodePills = episodeList.querySelectorAll('.watch-episode-pill');

@@ -212,16 +212,68 @@ export const DrachinAPI = {
     return fetchAPI('/anime/drachin/popular?page=' + page);
   },
 
-  /**
-   * Search dramas
-   * @param {string} query - Search query
-   * @returns {Promise<object>} - Search results
-   */
   async search(query) {
     if (!query || query.trim().length < 2) {
       throw new Error('Query minimal 2 karakter');
     }
-    return fetchAPI('/anime/drachin/search/' + sanitizeQuery(query));
+
+    try {
+      // 1. Coba request pencarian dari API asli
+      const result = await fetchAPI('/anime/drachin/search/' + sanitizeQuery(query));
+      
+      // Jika API mengembalikan data, langsung gunakan
+      if (result && result.data && result.data.length > 0) {
+        return result;
+      }
+
+      // 2. Fallback: Karena API pencarian drachin sering mengembalikan array kosong,
+      // kita lakukan pencarian lokal dari data terbaru dan populer
+      console.warn('API search mengembalikan hasil kosong, menggunakan local fallback search...');
+      
+      // Fetch beberapa halaman terbaru & populer untuk dijadikan indeks lokal
+      const [latest1, latest2, popular1] = await Promise.all([
+        this.getLatest(1).catch(() => ({ data: [] })),
+        this.getLatest(2).catch(() => ({ data: [] })),
+        this.getPopular(1).catch(() => ({ data: [] }))
+      ]);
+
+      const allDramas = [];
+      const addedSlugs = new Set();
+
+      const mergeDramas = (res) => {
+        if (res && res.data && Array.isArray(res.data)) {
+          res.data.forEach(drama => {
+            if (!addedSlugs.has(drama.slug)) {
+              allDramas.push(drama);
+              addedSlugs.add(drama.slug);
+            }
+          });
+        }
+      };
+
+      mergeDramas(latest1);
+      mergeDramas(latest2);
+      mergeDramas(popular1);
+
+      // Filter berdasarkan kata kunci
+      const lowerQuery = query.toLowerCase();
+      const filteredDramas = allDramas.filter(drama => {
+        const titleMatch = drama.title && drama.title.toLowerCase().includes(lowerQuery);
+        const slugMatch = drama.slug && drama.slug.toLowerCase().includes(lowerQuery);
+        return titleMatch || slugMatch;
+      });
+
+      return {
+        status: 'success',
+        source: 'Fallback Local Search',
+        data: filteredDramas,
+        pagination: { current_page: 1, has_next: false }
+      };
+
+    } catch (error) {
+      console.error('Search error:', error);
+      throw error;
+    }
   },
 
   /**
