@@ -217,7 +217,14 @@ async function loadEpisode(newIndex) {
       const loadingText = document.querySelector('.video-message__title');
       if (loadingText) loadingText.textContent = 'Mencari sumber alternatif...';
 
-      // 1. Cari drama di Dramabox
+      // 1. Refresh Token Dramabox terlebih dahulu sesuai dokumentasi
+      try {
+        await DramaboxAPI.authRefresh();
+      } catch (authErr) {
+        console.warn('Gagal refresh token Dramabox, melanjutkan pencarian...', authErr);
+      }
+
+      // 2. Cari drama di Dramabox
       const searchRes = await DramaboxAPI.search(state.dramaTitle);
       const searchData = searchRes.data || searchRes;
       
@@ -269,7 +276,7 @@ async function loadEpisode(newIndex) {
 
     } catch (fallbackError) {
       console.error('Fallback failed:', fallbackError);
-      showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
+      showError('Video tidak tersedia di Drachin maupun Dramabox API');
     }
   } finally {
     state.isLoading = false;
