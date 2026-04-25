@@ -25,6 +25,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  padding-top: 70px; /* Prevent fixed navbar overlap */
 }
 
 /* Typography utilities */

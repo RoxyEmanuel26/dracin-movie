@@ -17,6 +17,16 @@ const state = {
   recData: []
 };
 
+/**
+ * Format title dari slug jika title kosong
+ */
+function formatTitleFromSlug(slug) {
+  if (!slug) return 'Judul Tidak Tersedia';
+  let titleStr = slug.replace(/^\d+-/, ''); // Hapus angka di depan dan strip
+  titleStr = titleStr.replace(/-/g, ' '); // Ganti strip dengan spasi
+  return titleStr.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
 // DOM Elements
 const heroSliderContainer = document.querySelector('#hero-slider');
 const latestGrid = document.querySelector('#latest-grid');
@@ -46,7 +56,7 @@ export function initHeroSlider(slides) {
   let dotsHTML = '';
 
   slides.forEach((slide, index) => {
-    const title = sanitize(slide.title || slide.judul || 'Judul Tidak Tersedia');
+    const title = sanitize(slide.title || slide.judul || formatTitleFromSlug(slide.slug));
     const slug = encodeURIComponent(slide.slug || '');
     const posterRaw = slide.poster || slide.thumbnail || slide.image || '';
     const poster = validateUrl(posterRaw) || '/assets/poster-placeholder.svg';
