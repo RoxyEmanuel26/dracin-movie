@@ -156,6 +156,15 @@ async function loadEpisode(newIndex) {
   state.isLoading = true;
   showLoading();
 
+  // Update header and sidebar UI immediately so they are visible even on API error
+  playerTitle.textContent = state.dramaTitle || 'Judul Tidak Tersedia';
+  playerEpisode.textContent = `Episode ${state.episodeIndex}`;
+  renderEpisodeSidebar(state.totalEpisodes, state.episodeIndex);
+  updateEpisodeButtons();
+  
+  // Update page title
+  setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle || 'Drama'}`);
+
   try {
     // Fetch episode data
     const episodeResponse = await DrachinAPI.getEpisode(state.slug, state.episodeIndex);
@@ -193,21 +202,11 @@ async function loadEpisode(newIndex) {
       showError(episodeData.message || episodeResponse.message || ERROR_MESSAGES.VIDEO_UNPLAYABLE);
     }
 
-    // Update header
-    playerTitle.textContent = state.dramaTitle;
-    playerEpisode.textContent = `Episode ${state.episodeIndex}`;
-
-    // Update episode sidebar
-    renderEpisodeSidebar(state.totalEpisodes, state.episodeIndex);
-    updateEpisodeButtons();
-
-    // Save watch history
+    // Save watch history on success
     try {
       localStorage.setItem(`watch_history_${state.slug}`, state.episodeIndex);
     } catch (e) {}
 
-    // Update page title
-    setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle}`);
   } catch (error) {
     console.error('Error loading episode:', error);
     showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
@@ -248,6 +247,12 @@ async function init() {
     Toast.error('Slug drama tidak ditemukan');
     window.location.href = 'index.html';
     return;
+  }
+
+  // Update exit button
+  const exitBtn = document.getElementById('exit-btn');
+  if (exitBtn) {
+    exitBtn.href = `detail.html?slug=${encodeURIComponent(state.slug)}`;
   }
 
   // Initialize navbar & footer

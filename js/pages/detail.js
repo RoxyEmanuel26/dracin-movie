@@ -61,7 +61,12 @@ function renderHeroDetailSection(drama) {
 
   // Extract data with fallbacks
   const queryPoster = getQueryParam('poster');
-  const posterUrl = poster || drama.thumbnail || drama.image || queryPoster || '';
+  const sessionPoster = sessionStorage.getItem(`poster_${state.slug}`) || '';
+  const posterUrl = poster || drama.thumbnail || drama.image || queryPoster || sessionPoster || '';
+
+  if (posterUrl && !posterUrl.includes('poster-placeholder.svg')) {
+    sessionStorage.setItem(`poster_${state.slug}`, posterUrl);
+  }
 
   // Set poster
   heroDetailPoster.style.display = 'block';
