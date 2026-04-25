@@ -267,7 +267,7 @@
   padding: var(--space-4) 0;
 }
 
-.episode-pill {
+.detail-episode-pill {
   width: 60px;
   height: 60px;
   border-radius: var(--radius-md);
@@ -283,12 +283,12 @@
   justify-content: center;
 }
 
-.episode-pill:hover {
+.detail-episode-pill:hover {
   border-color: var(--color-accent-primary);
   transform: translateY(-2px);
 }
 
-.episode-pill.is-active {
+.detail-episode-pill.is-active {
   background: var(--color-accent-primary);
   border-color: var(--color-accent-primary);
   color: var(--color-text-inverse);
@@ -440,7 +440,7 @@
   gap: var(--space-2);
 }
 
-.episode-pill {
+.watch-episode-pill {
   width: 100%;
   padding: var(--space-2);
   border-radius: var(--radius-sm);
@@ -452,12 +452,12 @@
   transition: all var(--transition-smooth);
 }
 
-.episode-pill:hover {
+.watch-episode-pill:hover {
   border-color: var(--color-accent-primary);
   color: var(--color-text-primary);
 }
 
-.episode-pill.is-active {
+.watch-episode-pill.is-active {
   background: var(--color-accent-subtle);
   border-color: var(--color-accent-primary);
   color: var(--color-accent-primary);

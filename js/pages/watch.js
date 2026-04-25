@@ -107,7 +107,7 @@ function renderEpisodeSidebar(totalEpisodes, currentIndex) {
     const isActive = i === currentIndex;
     episodes.push(`
       <button 
-        class="episode-pill ${isActive ? 'is-active' : ''}"
+        class="watch-episode-pill ${isActive ? 'is-active' : ''}"
         data-episode="${i}"
         aria-label="Episode ${i}"
       >
@@ -123,7 +123,7 @@ function renderEpisodeSidebar(totalEpisodes, currentIndex) {
   `;
 
   // Add event listeners to episode pills
-  const episodePills = episodeList.querySelectorAll('.episode-pill');
+  const episodePills = episodeList.querySelectorAll('.watch-episode-pill');
   episodePills.forEach(pill => {
     pill.addEventListener('click', () => {
       const episodeIndex = parseInt(pill.dataset.episode, 10);

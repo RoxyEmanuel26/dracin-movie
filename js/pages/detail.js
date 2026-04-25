@@ -165,7 +165,7 @@ function renderEpisodeList(episodes) {
     const isActive = i === state.currentEpisode;
     episodeItems.push(`
       <button 
-        class="episode-pill ${isActive ? 'is-active' : ''}"
+        class="detail-episode-pill ${isActive ? 'is-active' : ''}"
         data-episode="${i}"
         aria-label="Episode ${i}"
       >
@@ -264,7 +264,7 @@ async function init() {
 
     // Event Delegation for episode grid and range selector
     episodeGrid.addEventListener('click', (e) => {
-      const pill = e.target.closest('.episode-pill');
+      const pill = e.target.closest('.detail-episode-pill');
       if (!pill) return;
       const idx = parseInt(pill.dataset.episode, 10);
       state.currentEpisode = idx;
