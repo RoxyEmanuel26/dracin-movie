@@ -285,7 +285,14 @@ export const DrachinAPI = {
     if (!slug) {
       throw new Error('Slug drama wajib diisi');
     }
-    return fetchAPI('/anime/drachin/detail/' + sanitizeSlug(slug));
+    const response = await fetchAPI('/anime/drachin/detail/' + sanitizeSlug(slug));
+    
+    // Clean " EP X" suffix from the title
+    if (response && response.data && response.data.title) {
+      response.data.title = response.data.title.replace(/\s+EP\s*\d+\s*$/i, '').trim();
+    }
+    
+    return response;
   },
 
   /**
@@ -332,5 +339,60 @@ export const DrachinAPI = {
       maxRequests: globalRateLimiter.maxRequests,
       windowMs: globalRateLimiter.windowMs
     };
+  }
+};
+
+/**
+ * DramaboxAPI - Module API untuk fallback endpoint Dramabox
+ */
+export const DramaboxAPI = {
+  /**
+   * Cari drama di Dramabox
+   * @param {string} query - Keyword pencarian (judul drama)
+   */
+  async search(query) {
+    if (!query) throw new Error('Query wajib diisi');
+    return fetchAPI('/anime/dramabox/search?q=' + encodeURIComponent(query));
+  },
+
+  /**
+   * Get latest dramas di Dramabox
+   * @param {number} page
+   */
+  async getLatest(page = 1) {
+    return fetchAPI('/anime/dramabox/latest?page=' + page);
+  },
+
+  /**
+   * Get trending dramas di Dramabox
+   */
+  async getTrending() {
+    return fetchAPI('/anime/dramabox/trending');
+  },
+
+  /**
+   * Get detail drama dari Dramabox
+   * @param {string|number} bookId
+   */
+  async getDetail(bookId) {
+    if (!bookId) throw new Error('bookId wajib diisi');
+    return fetchAPI('/anime/dramabox/detail?bookId=' + encodeURIComponent(bookId));
+  },
+
+  /**
+   * Get stream URL episode dari Dramabox
+   * @param {string|number} bookId
+   * @param {number} episode 
+   */
+  async getStream(bookId, episode) {
+    if (!bookId || !episode) throw new Error('bookId dan episode wajib diisi');
+    return fetchAPI(`/anime/dramabox/stream?bookId=${encodeURIComponent(bookId)}&episode=${parseInt(episode)}`);
+  },
+
+  /**
+   * Refresh Dramabox auth token
+   */
+  async authRefresh() {
+    return fetchAPI('/anime/dramabox/auth/refresh');
   }
 };

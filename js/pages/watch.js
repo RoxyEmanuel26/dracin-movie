@@ -3,7 +3,7 @@
  * Logic untuk halaman watch.html
  */
 
-import { DrachinAPI } from '../api.js';
+import { DrachinAPI, DramaboxAPI } from '../api.js';
 import { renderDramaCard, Toast, initNavbar, initFooter } from '../components.js';
 import { getQueryParam, setPageTitle, handleImageError } from '../utils.js';
 import { sanitize, validateUrl } from '../security.js';
@@ -199,7 +199,7 @@ async function loadEpisode(newIndex) {
       mainVideo.addEventListener('waiting', onWaiting);
       mainVideo.addEventListener('playing', onPlaying);
     } else {
-      showError(episodeData.message || episodeResponse.message || ERROR_MESSAGES.VIDEO_UNPLAYABLE);
+      throw new Error(episodeData.message || episodeResponse.message || 'Video URL not found');
     }
 
     // Save watch history on success
@@ -208,8 +208,69 @@ async function loadEpisode(newIndex) {
     } catch (e) {}
 
   } catch (error) {
-    console.error('Error loading episode:', error);
-    showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
+    console.warn('DrachinAPI failed, attempting Dramabox fallback...', error);
+    
+    try {
+      // Tampilkan status pencarian alternatif
+      const loadingSpinner = document.querySelector('.video-message__icon');
+      if (loadingSpinner) loadingSpinner.innerHTML = '<div class="spinner"></div>';
+      const loadingText = document.querySelector('.video-message__title');
+      if (loadingText) loadingText.textContent = 'Mencari sumber alternatif...';
+
+      // 1. Cari drama di Dramabox
+      const searchRes = await DramaboxAPI.search(state.dramaTitle);
+      const searchData = searchRes.data || searchRes;
+      
+      if (!searchData || searchData.length === 0) {
+        throw new Error('Drama tidak ditemukan di server alternatif');
+      }
+
+      // Ambil bookId dari hasil pencarian pertama
+      const bookId = searchData[0].bookId || searchData[0].id || searchData[0].slug;
+
+      // 2. Ambil stream episode
+      const streamRes = await DramaboxAPI.getStream(bookId, state.episodeIndex);
+      const streamData = streamRes.data || streamRes;
+      
+      const rawUrl = streamData.video_url || streamData.url || streamData.stream_url;
+      const videoUrl = validateUrl(rawUrl);
+
+      if (videoUrl) {
+        mainVideo.pause();
+        mainVideo.removeAttribute('src');
+        mainVideo.load();
+        mainVideo.src = videoUrl;
+        mainVideo.load();
+
+        if (onCanPlay) {
+          mainVideo.removeEventListener('canplay', onCanPlay);
+          mainVideo.removeEventListener('error', onError);
+          mainVideo.removeEventListener('waiting', onWaiting);
+          mainVideo.removeEventListener('playing', onPlaying);
+        }
+
+        onCanPlay = () => { showVideo(); mainVideo.play().catch(() => {}); };
+        onError = () => { showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE); };
+        onWaiting = () => { showLoading(); };
+        onPlaying = () => { hideLoading(); };
+
+        mainVideo.addEventListener('canplay', onCanPlay, { once: true });
+        mainVideo.addEventListener('error', onError);
+        mainVideo.addEventListener('waiting', onWaiting);
+        mainVideo.addEventListener('playing', onPlaying);
+
+        // Save watch history on fallback success
+        try {
+          localStorage.setItem(`watch_history_${state.slug}`, state.episodeIndex);
+        } catch (e) {}
+      } else {
+        throw new Error('Video URL tidak ditemukan di server alternatif');
+      }
+
+    } catch (fallbackError) {
+      console.error('Fallback failed:', fallbackError);
+      showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
+    }
   } finally {
     state.isLoading = false;
   }
