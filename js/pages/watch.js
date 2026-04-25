@@ -6,6 +6,7 @@
 import { DrachinAPI } from '../api.js';
 import { renderDramaCard, Toast, initNavbar, initFooter } from '../components.js';
 import { getQueryParam, setPageTitle, handleImageError } from '../utils.js';
+import { sanitize, validateUrl } from '../security.js';
 import { CSS_CLASSES, ERROR_MESSAGES } from '../config.js';
 
 // State object
@@ -27,6 +28,9 @@ const playerEpisode = document.querySelector('#player-episode');
 const prevEpisodeBtn = document.querySelector('#prev-episode-btn');
 const nextEpisodeBtn = document.querySelector('#next-episode-btn');
 const episodeList = document.querySelector('#episode-list');
+
+// Video event handler references
+let onCanPlay, onError, onWaiting, onPlaying;
 
 /**
  * Show loading state
@@ -133,6 +137,8 @@ function renderEpisodeSidebar(totalEpisodes, currentIndex) {
  * @param {number} newIndex - Episode index to load
  */
 async function loadEpisode(newIndex) {
+  if (state.isLoading) return;
+
   // Validate slug
   if (!state.slug) {
     Toast.error('Slug drama tidak ditemukan');
@@ -160,31 +166,33 @@ async function loadEpisode(newIndex) {
     const episodeData = episodeResponse.data || episodeResponse;
 
     // Set video source
-    const videoUrl = episodeData.video_url || episodeData.url || episodeData.stream_url;
+    const rawUrl = episodeData.video_url || episodeData.url || episodeData.stream_url;
+    const videoUrl = validateUrl(rawUrl);
 
     if (videoUrl) {
+      mainVideo.pause();
+      mainVideo.removeAttribute('src');
+      mainVideo.load();
       mainVideo.src = videoUrl;
       mainVideo.load();
 
-      // Show video when ready
-      mainVideo.oncanplay = () => {
-        showVideo();
-        mainVideo.play().catch(() => {});
-      };
+      // Explicitly manage event listeners
+      if (onCanPlay) {
+        mainVideo.removeEventListener('canplay', onCanPlay);
+        mainVideo.removeEventListener('error', onError);
+        mainVideo.removeEventListener('waiting', onWaiting);
+        mainVideo.removeEventListener('playing', onPlaying);
+      }
 
-      // Handle video errors
-      mainVideo.onerror = () => {
-        showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
-      };
+      onCanPlay = () => { showVideo(); mainVideo.play().catch(() => {}); };
+      onError = () => { showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE); };
+      onWaiting = () => { showLoading(); };
+      onPlaying = () => { hideLoading(); };
 
-      // Handle waiting (buffering)
-      mainVideo.onwaiting = () => {
-        showLoading();
-      };
-
-      mainVideo.onplaying = () => {
-        hideLoading();
-      };
+      mainVideo.addEventListener('canplay', onCanPlay, { once: true });
+      mainVideo.addEventListener('error', onError);
+      mainVideo.addEventListener('waiting', onWaiting);
+      mainVideo.addEventListener('playing', onPlaying);
     } else {
       showError(ERROR_MESSAGES.VIDEO_UNPLAYABLE);
     }
@@ -196,6 +204,11 @@ async function loadEpisode(newIndex) {
     // Update episode sidebar
     renderEpisodeSidebar(state.totalEpisodes, state.episodeIndex);
     updateEpisodeButtons();
+
+    // Save watch history
+    try {
+      localStorage.setItem(`watch_history_${state.slug}`, state.episodeIndex);
+    } catch (e) {}
 
     // Update page title
     setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle}`);
@@ -247,26 +260,37 @@ async function init() {
 
   // Fetch drama detail to get total episodes and title
   try {
-    const detailResponse = await DrachinAPI.getDetail(state.slug);
-    const dramaData = detailResponse.data || detailResponse;
-    state.totalEpisodes = (dramaData.episodes || []).length;
-    state.dramaTitle = dramaData.title || 'Drama';
+    const stateData = history.state;
+    if (stateData && stateData.title && stateData.totalEpisodes) {
+      state.dramaTitle = stateData.title;
+      state.totalEpisodes = stateData.totalEpisodes;
+      setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle}`);
+      await loadEpisode(state.episodeIndex);
+    } else {
+      const detailResponse = await DrachinAPI.getDetail(state.slug);
+      const dramaData = detailResponse.data || detailResponse;
+      state.totalEpisodes = (dramaData.episodes || []).length;
+      state.dramaTitle = dramaData.title || 'Drama';
 
-    // Update page title
-    setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle}`);
+      // Update page title
+      setPageTitle(`Ep ${state.episodeIndex} - ${state.dramaTitle}`);
 
-    // Load first episode
-    await loadEpisode(state.episodeIndex);
+      // Load first episode
+      await loadEpisode(state.episodeIndex);
+    }
   } catch (error) {
     console.error('Error loading drama detail:', error);
     Toast.error(ERROR_MESSAGES.NOT_FOUND);
     window.location.href = 'index.html';
   }
-}
 
-// Expose functions to global scope for HTML onclick attributes
-window.changeEpisode = changeEpisode;
-window.retryVideo = retryVideo;
+  // Setup UI event listeners (removing inline onclick)
+  prevEpisodeBtn.addEventListener('click', () => changeEpisode(-1));
+  nextEpisodeBtn.addEventListener('click', () => changeEpisode(1));
+
+  const retryBtn = document.querySelector('#player-error .btn--primary');
+  if (retryBtn) retryBtn.addEventListener('click', retryVideo);
+}
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', init);

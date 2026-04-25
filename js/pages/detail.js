@@ -16,7 +16,7 @@ const state = {
   data: null,
   currentEpisode: 1,
   episodeRangeStart: 1,
-  episodeRangeEnd: 50
+  episodeRangeEnd: 25
 };
 
 // DOM Elements
@@ -60,7 +60,8 @@ function renderHeroDetailSection(drama) {
   } = drama;
 
   // Set poster
-  heroDetailPoster.src = validateUrl(poster) || '';
+  heroDetailPoster.style.display = 'block';
+  heroDetailPoster.src = validateUrl(poster) || '/assets/poster-placeholder.svg';
   heroDetailPoster.alt = title;
   heroDetailPoster.onerror = () => handleImageError(heroDetailPoster);
 
@@ -110,12 +111,16 @@ function renderHeroDetailSection(drama) {
   `;
 
   // Set actions
+  const historyKey = `watch_history_${state.slug}`;
+  const lastEpisode = parseInt(localStorage.getItem(historyKey)) || 1;
+  const ctaLabel = lastEpisode > 1 ? `▶ Lanjut Ep ${lastEpisode}` : '▶ Tonton Ep 1';
+
   heroDetailActions.innerHTML = `
-    <a href="watch.html?slug=${encodeURIComponent(state.slug)}&index=1" class="btn btn--primary">
+    <a href="watch.html?slug=${encodeURIComponent(state.slug)}&index=${lastEpisode}" class="btn btn--primary">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
         <path d="M8 5v14l11-7z"/>
       </svg>
-      ▶ Tonton Ep 1
+      ${ctaLabel}
     </a>
   `;
 
@@ -127,10 +132,10 @@ function renderHeroDetailSection(drama) {
       const synopsisText = heroDetailSynopsis.querySelector('.hero-detail__synopsis-text');
 
       if (!isExpanded) {
-        synopsisText.textContent = synopsis || 'Sinopsis tidak tersedia.';
+        synopsisText.textContent = safeSynopsis || 'Sinopsis tidak tersedia.';
         synopsisToggle.textContent = 'Tutup';
       } else {
-        synopsisText.textContent = truncate(synopsis, SYNOPSIS_PREVIEW_LENGTH);
+        synopsisText.textContent = truncate(safeSynopsis, SYNOPSIS_PREVIEW_LENGTH);
         synopsisToggle.textContent = 'Baca Lebih';
       }
       synopsisToggle.setAttribute('aria-expanded', !isExpanded);
@@ -202,27 +207,6 @@ function renderEpisodeList(episodes) {
     episodeRangeSelector.innerHTML = '';
   }
 
-  // Add event listeners to episode pills
-  const episodePills = episodeGrid.querySelectorAll('.episode-pill');
-  episodePills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      const episodeIndex = parseInt(pill.dataset.episode, 10);
-      state.currentEpisode = episodeIndex;
-      window.location.href = `watch.html?slug=${encodeURIComponent(state.slug)}&index=${episodeIndex}`;
-    });
-  });
-
-  // Add event listeners to range pills
-  const rangePills = episodeRangeSelector.querySelectorAll('.range-pill');
-  rangePills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      const start = parseInt(pill.dataset.rangeStart, 10);
-      const end = parseInt(pill.dataset.rangeEnd, 10);
-      state.episodeRangeStart = start;
-      state.episodeRangeEnd = end;
-      renderEpisodeList(episodes);
-    });
-  });
 }
 
 /**
@@ -254,8 +238,8 @@ async function init() {
   state.slug = getQueryParam('slug');
 
   // Validate slug
-  if (!state.slug) {
-    Toast.error('Slug drama tidak ditemukan');
+  if (!state.slug || state.slug.length > SLUG_MAX_LENGTH) {
+    Toast.error('Slug drama tidak ditemukan atau tidak valid');
     window.location.href = 'index.html';
     return;
   }
@@ -278,8 +262,28 @@ async function init() {
     // Update breadcrumb
     updateBreadcrumb(data.title);
 
-    // Set page title
-    setPageTitle(data.title);
+    // Event Delegation for episode grid and range selector
+    episodeGrid.addEventListener('click', (e) => {
+      const pill = e.target.closest('.episode-pill');
+      if (!pill) return;
+      const idx = parseInt(pill.dataset.episode, 10);
+      state.currentEpisode = idx;
+      const targetUrl = `watch.html?slug=${encodeURIComponent(state.slug)}&index=${idx}`;
+      history.pushState(
+        { title: state.data.title, totalEpisodes: (state.data.episodes || []).length },
+        '',
+        targetUrl
+      );
+      window.location.href = targetUrl;
+    });
+
+    episodeRangeSelector.addEventListener('click', (e) => {
+      const pill = e.target.closest('.range-pill');
+      if (!pill) return;
+      state.episodeRangeStart = parseInt(pill.dataset.rangeStart, 10);
+      state.episodeRangeEnd = parseInt(pill.dataset.rangeEnd, 10);
+      renderEpisodeList(state.data.episodes);
+    });
 
     // Render components
     renderHeroDetailSection(data);
